@@ -1,0 +1,85 @@
+{
+  "timestamp": "2025-07-28T19:10:37.660Z",
+  "overview": {
+    "users": {
+      "total": 4,
+      "by_type": {
+        "admin": 1,
+        "family": 1,
+        "senior": 1,
+        "saad_admin": 1
+      },
+      "active": 4
+    },
+    "seniors": {
+      "total": 1,
+      "avg_call_frequency": 2
+    },
+    "calls": {
+      "total": 7,
+      "by_status": {
+        "completed": 5,
+        "scheduled": 2
+      },
+      "by_type": {
+        "scheduled": 7
+      },
+      "avg_duration": 624.6,
+      "avg_quality": 0.9,
+      "mood_distribution": {
+        "positive": 3,
+        "neutral": 2
+      }
+    },
+    "alerts": {
+      "total": 2,
+      "by_type": {
+        "mood": 1,
+        "social": 1
+      },
+      "by_severity": {
+        "low": 1,
+        "medium": 1
+      },
+      "by_status": {
+        "new": 1,
+        "acknowledged": 1
+      },
+      "avg_confidence": 0.8
+    },
+    "wellbeing": {
+      "total_metrics": 7,
+      "avg_scores": {
+        "social": 0.8,
+        "mood": 0.83,
+        "health": 0.85,
+        "cognitive": 0.91,
+        "engagement": 0.87,
+        "overall": 0.84
+      }
+    }
+  },
+  "details": {
+    "engagement": {
+      "last_30_days": {
+        "total_seniors": 1,
+        "completed_calls": 5,
+        "engagement_rate": 125,
+        "avg_call_quality": 0.9
+      }
+    },
+    "trends": {
+      "calls_by_week": {
+        "2025-07-27": 7
+      },
+      "alerts_by_week": {
+        "2025-07-27": 2
+      }
+    },
+    "top_insights": [
+      "🌟 Excellente qualité d'appels (>80%)",
+      "📈 1 seniors actifs sur la plateforme",
+      "⏱️ Durée moyenne des appels : 10 minutes"
+    ]
+  }
+}
