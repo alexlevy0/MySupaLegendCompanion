@@ -1,22 +1,24 @@
-import { todos$ as _todos$, addTodo, toggleDone } from "@/utils/SupaLegend";
-import { Tables } from "@/utils/database.types";
 import { observer } from "@legendapp/state/react";
 import { Image } from "expo-image";
 import { useState } from "react";
 import {
   FlatList,
-  Platform,
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
+  TouchableOpacity
 } from "react-native";
-import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 import { HelloWave } from "@/components/HelloWave";
 import ParallaxScrollView from "@/components/ParallaxScrollView";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
+import UserProfile from "@/components/UserProfile";
+
+import { todos$ as _todos$, addTodo, toggleDone } from "@/utils/SupaLegend";
+import { Database } from "@/utils/database.types";
+
+type Todo = Database["public"]["Tables"]["todos"]["Row"];
 
 const NOT_DONE_ICON = String.fromCodePoint(0x1f7e0);
 const DONE_ICON = String.fromCodePoint(0x2705);
@@ -42,7 +44,7 @@ const NewTodo = () => {
   );
 };
 
-const Todo = ({ todo }: { todo: Tables<"todos"> }) => {
+const Todo = ({ todo }: { todo: Todo }) => {
   const handlePress = () => {
     toggleDone(todo.id);
   };
@@ -63,9 +65,7 @@ const Todo = ({ todo }: { todo: Tables<"todos"> }) => {
 const Todos = observer(({ todos$ }: { todos$: typeof _todos$ }) => {
   // Get the todos from the state and subscribe to updates
   const todos = todos$.get();
-  const renderItem = ({ item: todo }: { item: Tables<"todos"> }) => (
-    <Todo todo={todo} />
-  );
+  const renderItem = ({ item: todo }: { item: Todo }) => <Todo todo={todo} />;
   if (todos)
     return (
       <FlatList
@@ -78,9 +78,8 @@ const Todos = observer(({ todos$ }: { todos$: typeof _todos$ }) => {
   return <></>;
 });
 
-// ✅ CORRIGÉ : Composant ClearTodos qui fonctionne maintenant
+// A button component to delete all the todos, only shows when there are some.
 const ClearTodos = observer(() => {
-  // Récupérer les todos depuis le state et s'abonner aux changements
   const todos = _todos$.get();
 
   // Calculer le nombre de todos
@@ -106,22 +105,81 @@ const ClearTodos = observer(() => {
 // The main app.
 const App = observer(() => {
   return (
-    <SafeAreaProvider>
-      <SafeAreaView style={styles.container}>
-        {/* <ThemedText>
-          <Text>Hello</Text>
-        </ThemedText>
- */}
-        <Text style={styles.heading}>Legend-State Example</Text>
-        <NewTodo />
-        <Todos todos$={_todos$} />
-        <ClearTodos />
-      </SafeAreaView>
-    </SafeAreaProvider>
+    <>
+      <ThemedText type="title" style={styles.heading}>
+        MyCompanion Demo
+      </ThemedText>
+      <NewTodo />
+      <Todos todos$={_todos$} />
+      <ClearTodos />
+    </>
   );
 });
 
-// Styles for the app.
+export default function HomeScreen() {
+  return (
+    <ParallaxScrollView
+      headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
+      headerImage={
+        <Image
+          source={require("@/assets/images/partial-react-logo.png")}
+          style={styles.reactLogo}
+        />
+      }
+    >
+      <ThemedView style={styles.titleContainer}>
+        <ThemedText type="title">Welcome to MyCompanion!</ThemedText>
+        <HelloWave />
+      </ThemedView>
+
+      {/* Profil utilisateur connecté */}
+      <ThemedView style={styles.stepContainer}>
+        <ThemedText type="subtitle">👤 Votre Profil</ThemedText>
+        <UserProfile />
+      </ThemedView>
+
+      <ThemedView style={styles.stepContainer}>
+        <ThemedText type="subtitle">
+          📝 Todo Demo (Legend-State + Supabase)
+        </ThemedText>
+        <ThemedText>
+          Ceci est un exemple fonctionnel de synchronisation en temps réel avec
+          Supabase et Legend-State.
+        </ThemedText>
+        <App />
+      </ThemedView>
+
+      <ThemedView style={styles.stepContainer}>
+        <ThemedText type="subtitle">🚀 Prochaines étapes</ThemedText>
+        <ThemedText>
+          Maintenant que l'authentification fonctionne, vous pouvez commencer à
+          développer les fonctionnalités MyCompanion :
+        </ThemedText>
+        <ThemedText style={styles.bulletPoint}>
+          • Interface pour les seniors
+        </ThemedText>
+        <ThemedText style={styles.bulletPoint}>• Dashboard famille</ThemedText>
+        <ThemedText style={styles.bulletPoint}>
+          • Gestion des alertes
+        </ThemedText>
+        <ThemedText style={styles.bulletPoint}>
+          • Rapports d'activité
+        </ThemedText>
+      </ThemedView>
+
+      <ThemedView style={styles.stepContainer}>
+        <ThemedText type="subtitle">🛠️ Développement</ThemedText>
+        <ThemedText>
+          Utilisez les scripts npm pour gérer vos données :
+        </ThemedText>
+        <ThemedText style={styles.command}>npm run seed:demo</ThemedText>
+        <ThemedText style={styles.command}>npm run health:check</ThemedText>
+        <ThemedText style={styles.command}>npm run analytics:report</ThemedText>
+      </ThemedView>
+    </ParallaxScrollView>
+  );
+}
+
 const styles = StyleSheet.create({
   titleContainer: {
     flexDirection: "row",
@@ -139,14 +197,11 @@ const styles = StyleSheet.create({
     left: 0,
     position: "absolute",
   },
-  container: {
-    flex: 1,
-    margin: 16,
-  },
   heading: {
     fontSize: 24,
     fontWeight: "bold",
     textAlign: "center",
+    marginBottom: 16,
   },
   input: {
     borderColor: "#999",
@@ -179,51 +234,18 @@ const styles = StyleSheet.create({
     flex: 0,
     textAlign: "center",
     fontSize: 16,
-    color: "#d32f2f", // Rouge pour indiquer la suppression
+    color: "#d32f2f",
     fontWeight: "600",
   },
+  bulletPoint: {
+    marginLeft: 16,
+    marginVertical: 2,
+  },
+  command: {
+    fontFamily: "monospace",
+    backgroundColor: "#f3f4f6",
+    padding: 8,
+    borderRadius: 4,
+    marginVertical: 2,
+  },
 });
-
-export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
-      headerImage={
-        <Image
-          source={require("@/assets/images/partial-react-logo.png")}
-          style={styles.reactLogo}
-        />
-      }
-    >
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit{" "}
-          <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText>{" "}
-          to see changes. Press{" "}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: "cmd + d",
-              android: "cmd + m",
-              web: "F12",
-            })}
-          </ThemedText>{" "}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <App />
-      </ThemedView>
-    </ParallaxScrollView>
-  );
-}
