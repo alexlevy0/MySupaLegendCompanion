@@ -1,5 +1,5 @@
-import { signOut, useMyCompanionAuth } from "@/utils/SupaLegend";
-import React from "react";
+import { getUserStats, signOut, useMyCompanionAuth } from "@/utils/SupaLegend";
+import React, { useEffect, useState } from "react";
 import {
     Alert,
     Platform,
@@ -9,9 +9,24 @@ import {
     View,
 } from "react-native";
 
+interface UserStats {
+  totalCalls: number;
+  totalAlerts: number;
+}
+
 export default function UserProfile() {
   const { userProfile, isAdmin, isSenior, isFamily, isSAAD } =
     useMyCompanionAuth();
+  const [stats, setStats] = useState<UserStats>({
+    totalCalls: 0,
+    totalAlerts: 0,
+  });
+
+  useEffect(() => {
+    if (userProfile?.id) {
+      getUserStats(userProfile.id).then(setStats);
+    }
+  }, [userProfile?.id]);
 
   const handleSignOut = async () => {
     if (Platform.OS === "web") {
@@ -102,20 +117,24 @@ export default function UserProfile() {
           </View>
         </View>
 
-        <View style={styles.details}>
-          <View style={styles.row}>
-            <Text style={styles.label}>ID:</Text>
-            {/* <Text style={styles.value}>{userProfile.id.slice(0, 8)}...</Text> */}
-            <Text style={styles.value}>{userProfile.id}</Text>
-          </View>
-
-          {userProfile.phone && (
-            <View style={styles.row}>
-              <Text style={styles.label}>Téléphone:</Text>
-              <Text style={styles.value}>{userProfile.phone}</Text>
+        {/* Statistiques pour les seniors */}
+        {isSenior && (
+          <View style={styles.statsSection}>
+            <Text style={styles.statsTitle}>📊 Mes statistiques</Text>
+            <View style={styles.statsRow}>
+              <View style={styles.statItem}>
+                <Text style={styles.statNumber}>{stats.totalCalls}</Text>
+                <Text style={styles.statLabel}>Appels reçus</Text>
+              </View>
+              <View style={styles.statItem}>
+                <Text style={styles.statNumber}>{stats.totalAlerts}</Text>
+                <Text style={styles.statLabel}>Alertes générées</Text>
+              </View>
             </View>
-          )}
+          </View>
+        )}
 
+        <View style={styles.details}>
           <View style={styles.row}>
             <Text style={styles.label}>Status:</Text>
             <Text style={[styles.value, styles.active]}>
@@ -129,6 +148,13 @@ export default function UserProfile() {
               {new Date(userProfile.created_at).toLocaleDateString("fr-FR")}
             </Text>
           </View>
+
+          {userProfile.phone && (
+            <View style={styles.row}>
+              <Text style={styles.label}>Téléphone:</Text>
+              <Text style={styles.value}>{userProfile.phone}</Text>
+            </View>
+          )}
         </View>
 
         <View style={styles.permissions}>
@@ -140,9 +166,14 @@ export default function UserProfile() {
           ))}
         </View>
 
-        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
-          <Text style={styles.signOutText}>🚪 Se déconnecter</Text>
-        </TouchableOpacity>
+        <View style={styles.actions}>
+          <TouchableOpacity
+            style={styles.signOutButton}
+            onPress={handleSignOut}
+          >
+            <Text style={styles.signOutText}>🚪 Se déconnecter</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -193,6 +224,35 @@ const styles = StyleSheet.create({
     color: "#4f46e5",
     fontWeight: "600",
   },
+  statsSection: {
+    backgroundColor: "#f8fafc",
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 20,
+  },
+  statsTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#374151",
+    marginBottom: 12,
+  },
+  statsRow: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+  },
+  statItem: {
+    alignItems: "center",
+  },
+  statNumber: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#4f46e5",
+  },
+  statLabel: {
+    fontSize: 12,
+    color: "#6b7280",
+    marginTop: 4,
+  },
   details: {
     marginBottom: 20,
   },
@@ -234,11 +294,16 @@ const styles = StyleSheet.create({
     color: "#4b5563",
     marginBottom: 4,
   },
+  actions: {
+    flexDirection: "row",
+    justifyContent: "center",
+  },
   signOutButton: {
     backgroundColor: "#ef4444",
     borderRadius: 12,
     padding: 16,
     alignItems: "center",
+    flex: 1,
   },
   signOutText: {
     color: "white",

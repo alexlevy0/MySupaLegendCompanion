@@ -8,8 +8,7 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
-// import "react-native-reanimated/lib/reanimated2/NativeReanimated";
-import 'react-native-url-polyfill/auto';
+// import "react-native-reanimated/lib/reanimated2/js-reanimated/index";
 
 import AuthWrapper from "@/components/auth/AuthWrapper";
 import { useColorScheme } from "@/hooks/useColorScheme";
@@ -40,8 +39,8 @@ export default function RootLayout() {
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="+not-found" />
         </Stack>
-        <StatusBar style="auto" />
       </AuthWrapper>
+      <StatusBar style="auto" />
     </ThemeProvider>
   );
 }
