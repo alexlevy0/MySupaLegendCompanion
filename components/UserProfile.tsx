@@ -1,26 +1,41 @@
 import { signOut, useMyCompanionAuth } from "@/utils/SupaLegend";
 import React from "react";
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+    Alert,
+    Platform,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
 
 export default function UserProfile() {
   const { userProfile, isAdmin, isSenior, isFamily, isSAAD } =
     useMyCompanionAuth();
 
   const handleSignOut = async () => {
-    Alert.alert("Déconnexion", "Êtes-vous sûr de vouloir vous déconnecter ?", [
-      { text: "Annuler", style: "cancel" },
-      {
-        text: "Déconnexion",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await signOut();
-          } catch (error) {
-            Alert.alert("Erreur", "Impossible de se déconnecter");
-          }
-        },
-      },
-    ]);
+    if (Platform.OS === "web") {
+      signOut();
+    } else {
+      Alert.alert(
+        "Déconnexion",
+        "Êtes-vous sûr de vouloir vous déconnecter ?",
+        [
+          { text: "Annuler", style: "cancel" },
+          {
+            text: "Déconnexion",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                await signOut();
+              } catch (error) {
+                Alert.alert("Erreur", "Impossible de se déconnecter");
+              }
+            },
+          },
+        ]
+      );
+    }
   };
 
   const getUserTypeIcon = () => {
@@ -90,7 +105,8 @@ export default function UserProfile() {
         <View style={styles.details}>
           <View style={styles.row}>
             <Text style={styles.label}>ID:</Text>
-            <Text style={styles.value}>{userProfile.id.slice(0, 8)}...</Text>
+            {/* <Text style={styles.value}>{userProfile.id.slice(0, 8)}...</Text> */}
+            <Text style={styles.value}>{userProfile.id}</Text>
           </View>
 
           {userProfile.phone && (

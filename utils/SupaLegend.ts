@@ -6,7 +6,9 @@ import { createClient, Session } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 import { AppState, Platform } from "react-native";
 import "react-native-get-random-values";
+import "react-native-url-polyfill/auto";
 import { v4 as uuidv4 } from "uuid";
+import "whatwg-fetch"; // ou un autre polyfill fetch si besoin
 
 import { Database } from "@/utils/database.types";
 import { Storage } from "@/utils/storage";
@@ -243,6 +245,7 @@ async function initializeAuth() {
         "Session found, loading user profile for:",
         session.user.email
       );
+      console.log("session.user.id", session.user.id);
       await loadUserProfile(session.user.id);
     } else {
       console.log("No session found");
@@ -261,12 +264,54 @@ async function initializeAuth() {
 // Charger le profil utilisateur depuis la table users avec retry et création automatique
 async function loadUserProfile(userId: string, retryCount = 0) {
   const maxRetries = 3;
-
   try {
     console.log(
       `Loading user profile for ${userId} (attempt ${retryCount + 1})`
     );
 
+    // 1. D'abord, vérifier avec une requête simple
+    const { data: userData, error: userError } = await supabase
+      .from("users")
+      .select("*")
+      .eq("id", userId);
+
+    console.log("Raw query result:", { userData, userError });
+
+    // 2. Si erreur RLS, essayer une requête avec email
+    if (userError && userError.code === "PGRST116") {
+      console.log("Trying to find user by email...");
+
+      // Récupérer l'email depuis auth
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
+
+      if (!authError && user?.email) {
+        const { data: userByEmail, error: emailError } = await supabase
+          .from("users")
+          .select("*")
+          .eq("email", user.email);
+
+        console.log("Search by email result:", { userByEmail, emailError });
+
+        if (userByEmail && userByEmail.length > 0) {
+          // Utilisateur trouvé par email mais pas par ID = problème de RLS
+          console.warn("🚨 RLS ISSUE: User found by email but not by ID");
+          console.warn("This indicates Row Level Security is blocking access");
+          console.warn("User data:", userByEmail[0]);
+
+          // Utiliser les données trouvées
+          authState$.user.set(userByEmail[0]);
+          authState$.isAuthenticated.set(true);
+          authState$.error.set(null);
+          authState$.loading.set(false);
+          return;
+        }
+      }
+    }
+
+    // 3. Requête normale avec .single()
     const { data, error } = await supabase
       .from("users")
       .select("*")
@@ -276,13 +321,21 @@ async function loadUserProfile(userId: string, retryCount = 0) {
     if (error) {
       console.error("User profile query error:", error);
 
-      // Si l'utilisateur n'existe pas dans public.users, essayer de le créer
-      if (error.code === "PGRST116" && retryCount < maxRetries) {
+      // Debug info supplémentaire
+      if (error.code === "PGRST116") {
+        console.log("🔍 Debug info:");
+        console.log("- User ID:", userId);
+        console.log("- Error code:", error.code);
         console.log(
-          "User not found in public.users, attempting to create profile..."
+          "- This usually means RLS is blocking access or user doesn't exist"
         );
-        await createMissingUserProfile(userId);
-        return loadUserProfile(userId, retryCount + 1);
+
+        // Essayer de créer le profil seulement si retry count < maxRetries
+        if (retryCount < maxRetries) {
+          console.log("Attempting to create missing user profile...");
+          await createMissingUserProfile(userId);
+          return loadUserProfile(userId, retryCount + 1);
+        }
       }
 
       throw error;
@@ -293,7 +346,7 @@ async function loadUserProfile(userId: string, retryCount = 0) {
     }
 
     console.log(
-      "User profile loaded successfully:",
+      "✅ User profile loaded successfully:",
       data.email,
       data.user_type
     );
@@ -311,10 +364,12 @@ async function loadUserProfile(userId: string, retryCount = 0) {
       return;
     }
 
-    // Après tous les retries, soit on crée un profil par défaut, soit on échoue
+    // Après tous les retries, définir l'état d'erreur
     authState$.user.set(null);
     authState$.isAuthenticated.set(false);
-    authState$.error.set("Failed to load user profile");
+    authState$.error.set(
+      `Failed to load user profile: ${error.message || error}`
+    );
   } finally {
     authState$.loading.set(false);
   }
@@ -333,27 +388,56 @@ async function createMissingUserProfile(userId: string) {
       throw new Error("Cannot get auth user data");
     }
 
+    // Données par défaut plus robustes
     const userData = {
       id: userId,
       email: user.email!,
       user_type: (user.user_metadata?.user_type || "family") as UserType,
-      first_name: user.user_metadata?.first_name || "",
+      first_name:
+        user.user_metadata?.first_name || user.email?.split("@")[0] || "",
       last_name: user.user_metadata?.last_name || "",
       is_active: true,
     };
 
     console.log("Creating missing user profile:", userData);
 
-    const { error: insertError } = await supabase
+    // Utiliser UPSERT au lieu d'INSERT pour éviter les doublons
+    const { data, error: insertError } = await supabase
       .from("users")
-      .insert(userData);
+      .upsert(userData, {
+        onConflict: "id",
+        ignoreDuplicates: false,
+      })
+      .select()
+      .single();
 
     if (insertError) {
       console.error("Failed to create user profile:", insertError);
+
+      // Si c'est toujours un problème de contrainte unique, essayer de mettre à jour
+      if (insertError.code === "23505") {
+        console.log("Trying to update existing profile...");
+        const { error: updateError } = await supabase
+          .from("users")
+          .update({
+            user_type: userData.user_type,
+            first_name: userData.first_name,
+            last_name: userData.last_name,
+            is_active: true,
+          })
+          .eq("email", userData.email);
+
+        if (updateError) {
+          throw updateError;
+        }
+        console.log("✅ User profile updated successfully");
+        return;
+      }
+
       throw insertError;
     }
 
-    console.log("User profile created successfully");
+    console.log("✅ User profile created successfully:", data);
   } catch (error) {
     console.error("Error creating missing user profile:", error);
     throw error;
@@ -368,10 +452,21 @@ supabase.auth.onAuthStateChange(async (event, session) => {
   console.log("Auth state changed:", event, session?.user?.email);
 
   authState$.session.set(session);
-
   if (session?.user) {
     authState$.loading.set(true);
-    await loadUserProfile(session.user.id);
+    console.log("Loading user profile for:", session.user.id);
+
+    try {
+      await loadUserProfile(session.user.id);
+      console.log("✅ loadUserProfile done");
+    } catch (err) {
+      console.error("🔥 Error in loadUserProfile:", err);
+      authState$.user.set(null);
+      authState$.isAuthenticated.set(false);
+      authState$.error.set("loadUserProfile failed");
+    } finally {
+      authState$.loading.set(false);
+    }
   } else {
     authState$.user.set(null);
     authState$.isAuthenticated.set(false);
@@ -409,7 +504,16 @@ export function useMyCompanionAuth() {
   const reloadProfile = async () => {
     if (session?.user) {
       authState$.loading.set(true);
+      // Clean storage
+      if (Platform.OS === "web") {
+        localStorage.clear();
+      } else {
+        Storage.clear();
+      }
+      authState$.user.set(null);
+      authState$.isAuthenticated.set(false);
       authState$.error.set(null);
+      console.log("Reloading profile for:", session.user.id);
       await loadUserProfile(session.user.id);
     }
   };
@@ -514,12 +618,60 @@ export async function signInWithEmail(email: string, password: string) {
 export async function signOut() {
   try {
     console.log("Signing out...");
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
-    console.log("Sign out successful");
+
+    const {
+      data: { session },
+      error: getSessionError,
+    } = await supabase.auth.getSession();
+
+    if (getSessionError) {
+      console.warn(
+        "Erreur lors de la récupération de la session :",
+        getSessionError
+      );
+    }
+
+    if (session) {
+      console.log("Session détectée :", session);
+
+      const { error: signOutError } = await supabase.auth.signOut();
+
+      if (signOutError) {
+        if (
+          signOutError.name === "AuthSessionMissingError" ||
+          (signOutError.status === 403 &&
+            signOutError.message?.includes("session_not_found"))
+        ) {
+          console.warn("Session déjà expirée ou inexistante.");
+        } else {
+          throw signOutError;
+        }
+      }
+    } else {
+      console.warn(
+        "Aucune session active. L'utilisateur est probablement déjà déconnecté."
+      );
+    }
+
+    console.log("Déconnexion réussie ou session déjà absente.");
+
+    if (Platform.OS === "web") {
+      localStorage.clear();
+    } else {
+      Storage.clear();
+    }
+    authState$.user.set(null);
+    authState$.isAuthenticated.set(false);
+    authState$.loading.set(false);
+    authState$.error.set(null);
+    authState$.session.set(null);
+    // Redirection
+    if (Platform.OS === "web") {
+      window.location.href = "/";
+    }
   } catch (error) {
-    console.error("Sign out error:", error);
-    throw error;
+    console.error("Erreur lors de la déconnexion :", error);
+    // Tu peux throw ici si tu veux déclencher une alerte UI
   }
 }
 

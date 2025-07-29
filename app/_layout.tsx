@@ -9,6 +9,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 // import "react-native-reanimated/lib/reanimated2/NativeReanimated";
+import 'react-native-url-polyfill/auto';
 
 import AuthWrapper from "@/components/auth/AuthWrapper";
 import { useColorScheme } from "@/hooks/useColorScheme";
