@@ -1404,3 +1404,461 @@ export function validateFrenchPhone(phone: string): {
     };
   }
 }
+
+export async function getSeniorStats(seniorId: string) {
+  try {
+    console.log("📊 Loading senior stats for:", seniorId);
+
+    const [callsResult, alertsResult, metricsResult] = await Promise.all([
+      // Nombre total d'appels
+      supabase
+        .from("calls")
+        .select("id", { count: "exact" })
+        .eq("senior_id", seniorId)
+        .eq("deleted", false),
+
+      // Nombre d'alertes par sévérité
+      supabase
+        .from("alerts")
+        .select("severity", { count: "exact" })
+        .eq("senior_id", seniorId)
+        .eq("deleted", false),
+
+      // Dernière métrique de bien-être
+      supabase
+        .from("well_being_metrics")
+        .select("*")
+        .eq("senior_id", seniorId)
+        .eq("deleted", false)
+        .order("metric_date", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
+
+    const stats = {
+      totalCalls: callsResult.count || 0,
+      totalAlerts: alertsResult.count || 0,
+      lastWellBeingScore: metricsResult.data?.overall_score || null,
+      lastMetricDate: metricsResult.data?.metric_date || null,
+    };
+
+    console.log("✅ Senior stats loaded:", stats);
+    return stats;
+  } catch (error) {
+    console.error("❌ Failed to get senior stats:", error);
+    return {
+      totalCalls: 0,
+      totalAlerts: 0,
+      lastWellBeingScore: null,
+      lastMetricDate: null,
+    };
+  }
+}
+
+// =====================================================
+// FONCTIONS FAMILY SHARING - À ajouter dans SupaLegend.ts
+// =====================================================
+
+// Types pour le partage familial
+export interface FamilyMemberWithUser {
+  id: string;
+  user_id: string;
+  senior_id: string;
+  relationship: string;
+  is_primary_contact: boolean;
+  access_level: "minimal" | "standard" | "full";
+  notification_preferences: any;
+  created_at: string;
+  updated_at: string;
+  users?: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+    phone?: string;
+  };
+}
+
+export interface InviteFamilyMemberData {
+  seniorId: string;
+  email: string;
+  relationship: string;
+  accessLevel: "minimal" | "standard" | "full";
+  notificationPreferences: {
+    dailyReports?: boolean;
+    emergencyAlerts?: boolean;
+    weeklyReports?: boolean;
+    smsAlerts?: boolean;
+  };
+}
+
+// ✅ Récupérer les membres de famille d'un senior
+export async function getFamilyMembers(
+  seniorId: string
+): Promise<FamilyMemberWithUser[]> {
+  try {
+    console.log("📊 Loading family members for senior:", seniorId);
+
+    const { data: familyMembers, error } = await supabase
+      .from("family_members")
+      .select(
+        `
+          id,
+          user_id,
+          senior_id,
+          relationship,
+          is_primary_contact,
+          access_level,
+          notification_preferences,
+          created_at,
+          updated_at,
+          users!inner (
+            id,
+            first_name,
+            last_name,
+            email,
+            phone
+          )
+        `
+      )
+      .eq("senior_id", seniorId)
+      .eq("deleted", false)
+      .order("is_primary_contact", { ascending: false })
+      .order("created_at", { ascending: true });
+
+    if (error) {
+      console.error("❌ Error loading family members:", error);
+      throw error;
+    }
+
+    console.log("✅ Family members loaded:", familyMembers?.length || 0);
+    return familyMembers || [];
+  } catch (error) {
+    console.error("❌ Failed to get family members:", error);
+    throw error;
+  }
+}
+
+// ✅ Inviter un membre de famille
+export async function inviteFamilyMember(
+  inviteData: InviteFamilyMemberData
+): Promise<void> {
+  try {
+    console.log("✉️ Inviting family member:", inviteData.email);
+
+    // Vérifier que l'utilisateur actuel est connecté
+    const currentUser = authState$.user.get();
+    if (!currentUser) {
+      throw new Error("User not authenticated");
+    }
+
+    // Vérifier si l'email correspond à un utilisateur existant
+    const { data: existingUser, error: userError } = await supabase
+      .from("users")
+      .select("id, first_name, last_name, email")
+      .eq("email", inviteData.email.toLowerCase())
+      .eq("deleted", false)
+      .maybeSingle();
+
+    if (userError && userError.code !== "PGRST116") {
+      throw userError;
+    }
+
+    if (existingUser) {
+      // L'utilisateur existe déjà - créer directement la relation
+      console.log("👤 User exists, creating family relation directly");
+
+      // Vérifier si la relation n'existe pas déjà
+      const { data: existingRelation, error: relationError } = await supabase
+        .from("family_members")
+        .select("id")
+        .eq("user_id", existingUser.id)
+        .eq("senior_id", inviteData.seniorId)
+        .eq("deleted", false)
+        .maybeSingle();
+
+      if (relationError && relationError.code !== "PGRST116") {
+        throw relationError;
+      }
+
+      if (existingRelation) {
+        throw new Error("Cette personne a déjà accès à ce senior");
+      }
+
+      // Créer la relation familiale
+      await createFamilyRelation({
+        user_id: existingUser.id,
+        senior_id: inviteData.seniorId,
+        relationship: inviteData.relationship,
+        is_primary_contact: false, // Les invités ne sont jamais contacts principaux
+        notification_preferences: inviteData.notificationPreferences,
+        access_level: inviteData.accessLevel,
+      });
+
+      // Optionnel : Envoyer un email de notification
+      console.log("📧 Should send notification email to existing user");
+    } else {
+      // L'utilisateur n'existe pas - créer une invitation
+      console.log("📨 User doesn't exist, creating invitation");
+
+      // Créer une invitation en attente (vous pourriez avoir une table "family_invitations")
+      // Pour simplifier, on va créer un utilisateur "pending" ou utiliser une autre approche
+
+      // Option 1: Créer une table d'invitations
+      // Option 2: Envoyer un email avec un lien d'inscription pré-rempli
+      // Option 3: Créer un utilisateur "inactive" qui sera activé à la première connexion
+
+      // Pour cette implémentation, on va utiliser l'option 3
+      const tempPassword = generateId().substring(0, 8); // Mot de passe temporaire
+
+      // Créer un compte utilisateur inactif
+      const { data: authData, error: signUpError } =
+        await supabase.auth.admin.createUser({
+          email: inviteData.email.toLowerCase(),
+          password: tempPassword,
+          email_confirm: true, // Confirmer l'email automatiquement
+          user_metadata: {
+            first_name: inviteData.email.split("@")[0], // Prénom temporaire
+            last_name: "", // Nom temporaire
+            user_type: "family",
+            invited_by: currentUser.id,
+            invited_for_senior: inviteData.seniorId,
+          },
+        });
+
+      if (signUpError) {
+        throw new Error(
+          `Impossible de créer le compte: ${signUpError.message}`
+        );
+      }
+
+      if (!authData.user) {
+        throw new Error("User creation failed");
+      }
+
+      // Créer le profil utilisateur
+      const { error: profileError } = await supabase.from("users").insert({
+        id: authData.user.id,
+        email: inviteData.email.toLowerCase(),
+        user_type: "family",
+        first_name: inviteData.email.split("@")[0],
+        last_name: "",
+        is_active: false, // Inactif jusqu'à la première connexion
+      });
+
+      if (profileError) {
+        console.warn("Profile creation warning:", profileError);
+      }
+
+      // Créer la relation familiale
+      await createFamilyRelation({
+        user_id: authData.user.id,
+        senior_id: inviteData.seniorId,
+        relationship: inviteData.relationship,
+        is_primary_contact: false,
+        notification_preferences: inviteData.notificationPreferences,
+        access_level: inviteData.accessLevel,
+      });
+
+      // Envoyer un email d'invitation avec le lien de reset password
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+        inviteData.email.toLowerCase(),
+        {
+          redirectTo: `${
+            process.env.EXPO_PUBLIC_SITE_URL || "http://localhost:3000"
+          }/auth/welcome`,
+        }
+      );
+
+      if (resetError) {
+        console.warn("Reset password email error:", resetError);
+        // Ne pas faire échouer l'invitation pour ça
+      }
+
+      console.log("✅ Invitation created and email sent");
+    }
+
+    console.log("✅ Family member invited successfully");
+  } catch (error) {
+    console.error("❌ Failed to invite family member:", error);
+    throw error;
+  }
+}
+
+// ✅ Modifier le niveau d'accès d'un membre
+export async function updateFamilyMemberAccess(
+  memberId: string,
+  newAccessLevel: "minimal" | "standard" | "full"
+): Promise<void> {
+  try {
+    console.log("🔧 Updating family member access:", memberId, newAccessLevel);
+
+    // Vérifier que l'utilisateur actuel a le droit de modifier cet accès
+    const currentUser = authState$.user.get();
+    if (!currentUser) {
+      throw new Error("User not authenticated");
+    }
+
+    // Mettre à jour le niveau d'accès
+    const { error } = await supabase
+      .from("family_members")
+      .update({
+        access_level: newAccessLevel,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", memberId);
+
+    if (error) {
+      throw error;
+    }
+
+    console.log("✅ Family member access updated successfully");
+  } catch (error) {
+    console.error("❌ Failed to update family member access:", error);
+    throw error;
+  }
+}
+
+// ✅ Retirer un membre de famille
+export async function removeFamilyMember(memberId: string): Promise<void> {
+  try {
+    console.log("🗑️ Removing family member:", memberId);
+
+    // Vérifier que l'utilisateur actuel a le droit de retirer ce membre
+    const currentUser = authState$.user.get();
+    if (!currentUser) {
+      throw new Error("User not authenticated");
+    }
+
+    // Vérifier que ce n'est pas le contact principal
+    const { data: member, error: fetchError } = await supabase
+      .from("family_members")
+      .select("is_primary_contact")
+      .eq("id", memberId)
+      .single();
+
+    if (fetchError) {
+      throw fetchError;
+    }
+
+    if (member.is_primary_contact) {
+      throw new Error("Impossible de retirer le contact principal");
+    }
+
+    // Marquer comme supprimé (soft delete)
+    const { error } = await supabase
+      .from("family_members")
+      .update({
+        deleted: true,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", memberId);
+
+    if (error) {
+      throw error;
+    }
+
+    console.log("✅ Family member removed successfully");
+  } catch (error) {
+    console.error("❌ Failed to remove family member:", error);
+    throw error;
+  }
+}
+
+// ✅ Transférer le rôle de contact principal
+export async function transferPrimaryContact(
+  seniorId: string,
+  newPrimaryContactId: string
+): Promise<void> {
+  try {
+    console.log(
+      "👑 Transferring primary contact:",
+      seniorId,
+      newPrimaryContactId
+    );
+
+    const currentUser = authState$.user.get();
+    if (!currentUser) {
+      throw new Error("User not authenticated");
+    }
+
+    // Transaction pour transférer le rôle
+    const { error } = await supabase.rpc("transfer_primary_contact", {
+      p_senior_id: seniorId,
+      p_new_primary_id: newPrimaryContactId,
+    });
+
+    if (error) {
+      // Si la fonction RPC n'existe pas, faire la transaction manuellement
+      // 1. Retirer le rôle principal de l'ancien contact
+      await supabase
+        .from("family_members")
+        .update({ is_primary_contact: false })
+        .eq("senior_id", seniorId)
+        .eq("is_primary_contact", true);
+
+      // 2. Donner le rôle principal au nouveau contact
+      const { error: updateError } = await supabase
+        .from("family_members")
+        .update({
+          is_primary_contact: true,
+          access_level: "full", // Le contact principal a toujours un accès complet
+        })
+        .eq("id", newPrimaryContactId);
+
+      if (updateError) {
+        throw updateError;
+      }
+    }
+
+    console.log("✅ Primary contact transferred successfully");
+  } catch (error) {
+    console.error("❌ Failed to transfer primary contact:", error);
+    throw error;
+  }
+}
+
+// ✅ Obtenir les statistiques de partage d'un senior
+export async function getSeniorSharingStats(seniorId: string) {
+  try {
+    console.log("📊 Getting sharing stats for senior:", seniorId);
+
+    const [membersResult, reportsResult] = await Promise.all([
+      // Nombre de membres de famille
+      supabase
+        .from("family_members")
+        .select("id", { count: "exact" })
+        .eq("senior_id", seniorId)
+        .eq("deleted", false),
+
+      // Nombre de rapports envoyés ce mois
+      supabase
+        .from("family_reports")
+        .select("id", { count: "exact" })
+        .eq("senior_id", seniorId)
+        .eq("deleted", false)
+        .gte(
+          "created_at",
+          new Date(
+            new Date().getFullYear(),
+            new Date().getMonth(),
+            1
+          ).toISOString()
+        ),
+    ]);
+
+    const stats = {
+      totalMembers: membersResult.count || 0,
+      reportsThisMonth: reportsResult.count || 0,
+    };
+
+    console.log("✅ Sharing stats loaded:", stats);
+    return stats;
+  } catch (error) {
+    console.error("❌ Failed to get sharing stats:", error);
+    return {
+      totalMembers: 0,
+      reportsThisMonth: 0,
+    };
+  }
+}

@@ -1,4 +1,5 @@
 import AddSeniorForm from "@/components/AddSeniorForm";
+import SeniorDetailScreen from "@/components/SeniorDetailScreen";
 import { getUserSeniors, useMyCompanionAuth } from "@/utils/SupaLegend";
 import React, { useEffect, useState } from "react";
 import {
@@ -37,6 +38,8 @@ export default function SeniorsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [selectedSenior, setSelectedSenior] = useState<Senior | null>(null);
+  const [showFamilySharing, setShowFamilySharing] = useState(false);
 
   // Charger les seniors de l'utilisateur
   const loadSeniors = async (showLoader = true) => {
@@ -100,11 +103,7 @@ export default function SeniorsScreen() {
       <TouchableOpacity
         style={styles.seniorCard}
         onPress={() => {
-          // TODO: Naviguer vers le détail du senior
-          Alert.alert(
-            "Info",
-            `Détail de ${senior.first_name} ${senior.last_name}`
-          );
+          setSelectedSenior(item);
         }}
       >
         {/* Header avec nom et relation */}
@@ -158,13 +157,7 @@ export default function SeniorsScreen() {
 
           <TouchableOpacity
             style={styles.viewButton}
-            onPress={() => {
-              // TODO: Naviguer vers les détails/statistiques
-              Alert.alert(
-                "📊 Statistiques",
-                `Voir les données de ${senior.first_name}`
-              );
-            }}
+            onPress={() => setSelectedSenior(item)}
           >
             <Text style={styles.viewButtonText}>Voir les détails →</Text>
           </TouchableOpacity>
@@ -209,6 +202,29 @@ export default function SeniorsScreen() {
     );
   }
 
+  // Affichage du détail d'un senior
+  if (selectedSenior) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <SeniorDetailScreen
+          senior={selectedSenior}
+          onBack={() => {
+            setSelectedSenior(null);
+            // Recharger la liste en cas de modifications
+            loadSeniors(false);
+          }}
+          onEdit={(seniorId) => {
+            // TODO: Naviguer vers l'écran d'édition
+            Alert.alert(
+              "✏️ Édition",
+              `Éditer ${selectedSenior.seniors.first_name}`
+            );
+          }}
+        />
+      </SafeAreaView>
+    );
+  }
+
   // Affichage du formulaire d'ajout
   if (showAddForm) {
     return (
@@ -236,7 +252,6 @@ export default function SeniorsScreen() {
               : `${seniors.length} seniors sous votre responsabilité`}
           </Text>
         </View>
-
         {seniors.length > 0 && (
           <TouchableOpacity
             style={styles.addButton}

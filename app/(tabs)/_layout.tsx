@@ -1,3 +1,4 @@
+// app/(tabs)/_layout.tsx
 import { Tabs } from "expo-router";
 import React from "react";
 import { Platform } from "react-native";
@@ -7,9 +8,11 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 import TabBarBackground from "@/components/ui/TabBarBackground";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { useMyCompanionAuth } from "@/utils/SupaLegend";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const { isFamily, isSAAD, isAdmin, isSenior } = useMyCompanionAuth();
 
   return (
     <Tabs
@@ -36,6 +39,46 @@ export default function TabLayout() {
           ),
         }}
       />
+
+      {/* Écran Seniors - visible pour famille et SAAD */}
+      {(isFamily || isSAAD) && (
+        <Tabs.Screen
+          name="seniors"
+          options={{
+            title: "Seniors",
+            tabBarIcon: ({ color }) => (
+              <IconSymbol size={28} name="person.2.fill" color={color} />
+            ),
+          }}
+        />
+      )}
+
+      {/* Écran Dashboard - visible pour seniors */}
+      {isSenior && (
+        <Tabs.Screen
+          name="dashboard"
+          options={{
+            title: "Dashboard",
+            tabBarIcon: ({ color }) => (
+              <IconSymbol size={28} name="chart.bar.fill" color={color} />
+            ),
+          }}
+        />
+      )}
+
+      {/* Écran Alertes - visible pour famille, SAAD et admin */}
+      {(isFamily || isSAAD || isAdmin) && (
+        <Tabs.Screen
+          name="alerts"
+          options={{
+            title: "Alertes",
+            tabBarIcon: ({ color }) => (
+              <IconSymbol size={28} name="bell.fill" color={color} />
+            ),
+          }}
+        />
+      )}
+
       <Tabs.Screen
         name="explore"
         options={{
@@ -45,15 +88,7 @@ export default function TabLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="seniors"
-        options={{
-          title: "Seniors",
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="person.2.fill" color={color} />
-          ),
-        }}
-      />
+
       <Tabs.Screen
         name="profile"
         options={{
