@@ -971,15 +971,15 @@ export function toggleDone(id: string) {
 }
 
 // Fonctions MyCompanion
-export function addSenior(
-  seniorData: Partial<Database["public"]["Tables"]["seniors"]["Insert"]>
-) {
-  const id = generateId();
-  seniors$[id].assign({
-    id,
-    ...seniorData,
-  });
-}
+// export function addSenior(
+//   seniorData: Partial<Database["public"]["Tables"]["seniors"]["Insert"]>
+// ) {
+//   const id = generateId();
+//   seniors$[id].assign({
+//     id,
+//     ...seniorData,
+//   });
+// }
 
 export function createAlert(
   alertData: Partial<Database["public"]["Tables"]["alerts"]["Insert"]>
@@ -1002,3 +1002,405 @@ export function acknowledgeAlert(alertId: string, userId: string) {
 
 // Initialiser l'authentification
 initializeAuth();
+
+// =====================================================
+// FONCTIONS CORRIGÉES POUR LA GESTION DES SENIORS
+// À remplacer dans votre SupaLegend.ts
+// =====================================================
+
+// Types mis à jour pour correspondre au schéma
+export interface SeniorCreateData {
+  first_name: string;
+  last_name: string;
+  phone: string;
+  birth_date?: string | null;
+  preferred_call_time?: string;
+  call_frequency?: number;
+  emergency_contact?: string;
+  address?: {
+    street?: string;
+    city?: string;
+    postal_code?: string;
+  };
+  personality_profile?: any;
+  medical_context?: any;
+  interests?: any;
+  communication_preferences?: any;
+}
+
+export interface FamilyRelationData {
+  user_id: string;
+  senior_id: string;
+  relationship: string;
+  is_primary_contact?: boolean;
+  notification_preferences?: {
+    dailyReports?: boolean;
+    emergencyAlerts?: boolean;
+    weeklyReports?: boolean;
+    smsAlerts?: boolean;
+  };
+  access_level?: "minimal" | "standard" | "full";
+}
+
+// ✅ Fonction corrigée pour créer un senior
+export async function addSenior(seniorData: SeniorCreateData): Promise<string> {
+  try {
+    console.log(
+      "🧓 Creating senior profile...",
+      seniorData.first_name,
+      seniorData.last_name
+    );
+
+    // Vérifier que l'utilisateur est connecté
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error("User not authenticated");
+    }
+
+    // Nettoyer le numéro de téléphone (supprimer les espaces, points, tirets)
+    const cleanPhone = seniorData.phone.replace(/[\s\.\-]/g, "");
+
+    // Vérifier le format du téléphone français
+    const phoneRegex = /^(\+33|0)[1-9][0-9]{8}$/;
+    if (!phoneRegex.test(cleanPhone)) {
+      throw new Error(
+        "Format de téléphone invalide. Utilisez un numéro français valide."
+      );
+    }
+
+    // Vérifier si un senior avec ce téléphone existe déjà
+    const { data: existingSenior, error: checkError } = await supabase
+      .from("seniors")
+      .select("id, first_name, last_name")
+      .eq("phone", cleanPhone)
+      .eq("deleted", false)
+      .maybeSingle();
+
+    if (checkError && checkError.code !== "PGRST116") {
+      throw checkError;
+    }
+
+    if (existingSenior) {
+      throw new Error(
+        `Un senior avec ce numéro existe déjà : ${existingSenior.first_name} ${existingSenior.last_name}`
+      );
+    }
+
+    // Préparer les données pour l'insertion
+    const insertData = {
+      // Informations personnelles (nouvelles colonnes)
+      first_name: seniorData.first_name.trim(),
+      last_name: seniorData.last_name.trim(),
+      phone: cleanPhone,
+
+      // Informations existantes
+      user_id: null, // Le senior n'a pas encore de compte utilisateur
+      birth_date: seniorData.birth_date || null,
+      preferred_call_time: seniorData.preferred_call_time || "09:00:00", // Format time
+      call_frequency: seniorData.call_frequency || 1,
+      emergency_contact: seniorData.emergency_contact || cleanPhone,
+      address: seniorData.address ? JSON.stringify(seniorData.address) : null,
+      personality_profile: seniorData.personality_profile
+        ? JSON.stringify(seniorData.personality_profile)
+        : null,
+      medical_context: seniorData.medical_context
+        ? JSON.stringify(seniorData.medical_context)
+        : null,
+      interests: seniorData.interests
+        ? JSON.stringify(seniorData.interests)
+        : null,
+      communication_preferences: seniorData.communication_preferences
+        ? JSON.stringify(seniorData.communication_preferences)
+        : null,
+    };
+
+    console.log("📤 Inserting senior data:", insertData);
+
+    // Créer le profil senior dans la base de données
+    const { data: senior, error: insertError } = await supabase
+      .from("seniors")
+      .insert(insertData)
+      .select("id")
+      .single();
+
+    if (insertError) {
+      console.error("❌ Error creating senior:", insertError);
+
+      // Messages d'erreur plus explicites
+      if (
+        insertError.code === "23505" &&
+        insertError.message.includes("phone")
+      ) {
+        throw new Error(
+          "Ce numéro de téléphone est déjà utilisé par un autre senior."
+        );
+      }
+
+      throw new Error(
+        `Erreur lors de la création du profil : ${insertError.message}`
+      );
+    }
+
+    console.log("✅ Senior profile created successfully:", senior.id);
+
+    // Mettre à jour l'observable local pour Legend-State
+    seniors$[senior.id].assign({
+      id: senior.id,
+      user_id: null,
+      first_name: seniorData.first_name,
+      last_name: seniorData.last_name,
+      phone: cleanPhone,
+      birth_date: seniorData.birth_date,
+      preferred_call_time: seniorData.preferred_call_time || "09:00:00",
+      call_frequency: seniorData.call_frequency || 1,
+      personality_profile: seniorData.personality_profile || null,
+      medical_context: seniorData.medical_context || null,
+      interests: seniorData.interests || null,
+      communication_preferences: seniorData.communication_preferences || null,
+      emergency_contact: seniorData.emergency_contact || cleanPhone,
+      address: seniorData.address || null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      deleted: false,
+    });
+
+    return senior.id;
+  } catch (error) {
+    console.error("❌ Failed to create senior:", error);
+    throw error;
+  }
+}
+
+// ✅ Fonction corrigée pour créer une relation familiale
+export async function createFamilyRelation(
+  relationData: FamilyRelationData
+): Promise<string> {
+  try {
+    console.log("👨‍👩‍👧‍👦 Creating family relation...", relationData);
+
+    // Vérifier que l'utilisateur est connecté
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error("User not authenticated");
+    }
+
+    // Vérifier si la relation existe déjà
+    const { data: existingRelation, error: checkError } = await supabase
+      .from("family_members")
+      .select("id")
+      .eq("user_id", relationData.user_id)
+      .eq("senior_id", relationData.senior_id)
+      .eq("deleted", false)
+      .maybeSingle();
+
+    if (checkError && checkError.code !== "PGRST116") {
+      throw checkError;
+    }
+
+    if (existingRelation) {
+      throw new Error("Cette relation familiale existe déjà");
+    }
+
+    // Préparer les données de notification par défaut
+    const defaultNotifications = {
+      dailyReports: true,
+      emergencyAlerts: true,
+      weeklyReports: false,
+      smsAlerts: true,
+      ...relationData.notification_preferences,
+    };
+
+    // Créer la relation familiale
+    const { data: relation, error: insertError } = await supabase
+      .from("family_members")
+      .insert({
+        user_id: relationData.user_id,
+        senior_id: relationData.senior_id,
+        relationship: relationData.relationship,
+        is_primary_contact: relationData.is_primary_contact || false,
+        notification_preferences: JSON.stringify(defaultNotifications),
+        access_level: relationData.access_level || "standard",
+      })
+      .select("id")
+      .single();
+
+    if (insertError) {
+      console.error("❌ Error creating family relation:", insertError);
+      throw new Error(
+        `Erreur lors de la création de la relation : ${insertError.message}`
+      );
+    }
+
+    console.log("✅ Family relation created successfully:", relation.id);
+    return relation.id;
+  } catch (error) {
+    console.error("❌ Failed to create family relation:", error);
+    throw error;
+  }
+}
+
+// ✅ Fonction corrigée pour récupérer les seniors d'un utilisateur
+export async function getUserSeniors(userId?: string): Promise<any[]> {
+  try {
+    const targetUserId = userId || authState$.user.get()?.id;
+    if (!targetUserId) {
+      throw new Error("No user ID provided");
+    }
+
+    console.log("📊 Loading seniors for user:", targetUserId);
+
+    // Requête corrigée avec les nouvelles colonnes
+    const { data: relations, error } = await supabase
+      .from("family_members")
+      .select(
+        `
+          id,
+          relationship,
+          is_primary_contact,
+          access_level,
+          created_at,
+          seniors!inner (
+            id,
+            first_name,
+            last_name,
+            phone,
+            birth_date,
+            preferred_call_time,
+            call_frequency,
+            address,
+            emergency_contact,
+            created_at
+          )
+        `
+      )
+      .eq("user_id", targetUserId)
+      .eq("deleted", false)
+      .eq("seniors.deleted", false);
+
+    if (error) {
+      console.error("❌ Error loading seniors:", error);
+      throw error;
+    }
+
+    console.log("✅ Loaded seniors successfully:", relations?.length || 0);
+    return relations || [];
+  } catch (error) {
+    console.error("❌ Failed to get user seniors:", error);
+    throw error;
+  }
+}
+
+// ✅ Fonction corrigée pour mettre à jour un senior
+export async function updateSenior(
+  seniorId: string,
+  updates: Partial<SeniorCreateData>
+): Promise<void> {
+  try {
+    console.log("🔄 Updating senior profile:", seniorId);
+
+    // Nettoyer le téléphone si fourni
+    if (updates.phone) {
+      updates.phone = updates.phone.replace(/[\s\.\-]/g, "");
+      const phoneRegex = /^(\+33|0)[1-9][0-9]{8}$/;
+      if (!phoneRegex.test(updates.phone)) {
+        throw new Error("Format de téléphone invalide");
+      }
+    }
+
+    // Préparer les données pour la mise à jour
+    const updateData: any = {
+      ...updates,
+      updated_at: new Date().toISOString(),
+    };
+
+    // Convertir les objets en JSON si nécessaire
+    if (updates.address) {
+      updateData.address = JSON.stringify(updates.address);
+    }
+    if (updates.personality_profile) {
+      updateData.personality_profile = JSON.stringify(
+        updates.personality_profile
+      );
+    }
+    if (updates.medical_context) {
+      updateData.medical_context = JSON.stringify(updates.medical_context);
+    }
+    if (updates.interests) {
+      updateData.interests = JSON.stringify(updates.interests);
+    }
+    if (updates.communication_preferences) {
+      updateData.communication_preferences = JSON.stringify(
+        updates.communication_preferences
+      );
+    }
+
+    const { error } = await supabase
+      .from("seniors")
+      .update(updateData)
+      .eq("id", seniorId);
+
+    if (error) {
+      throw error;
+    }
+
+    // Mettre à jour l'observable local
+    if (seniors$[seniorId]) {
+      seniors$[seniorId].assign({
+        ...updates,
+        updated_at: new Date().toISOString(),
+      });
+    }
+
+    console.log("✅ Senior profile updated successfully");
+  } catch (error) {
+    console.error("❌ Failed to update senior:", error);
+    throw error;
+  }
+}
+
+// ✅ Fonction pour valider un numéro de téléphone français
+export function validateFrenchPhone(phone: string): {
+  isValid: boolean;
+  cleaned: string;
+  error?: string;
+} {
+  try {
+    // Nettoyer le numéro
+    const cleaned = phone.replace(/[\s\.\-\(\)]/g, "");
+
+    // Vérifier le format français
+    const phoneRegex = /^(\+33|0033|0)[1-9][0-9]{8}$/;
+
+    if (!phoneRegex.test(cleaned)) {
+      return {
+        isValid: false,
+        cleaned: "",
+        error:
+          "Le numéro doit être un téléphone français valide (ex: 06 12 34 56 78)",
+      };
+    }
+
+    // Normaliser au format français standard
+    let normalized = cleaned;
+    if (normalized.startsWith("+33")) {
+      normalized = "0" + normalized.substring(3);
+    } else if (normalized.startsWith("0033")) {
+      normalized = "0" + normalized.substring(4);
+    }
+
+    return {
+      isValid: true,
+      cleaned: normalized,
+    };
+  } catch (error) {
+    return {
+      isValid: false,
+      cleaned: "",
+      error: "Format de téléphone invalide",
+    };
+  }
+}
