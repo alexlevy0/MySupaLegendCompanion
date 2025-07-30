@@ -1,16 +1,16 @@
-import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Modal } from 'react-native';
-import { ThemedView } from '@/components/ThemedView';
-import { ThemedText } from '@/components/ThemedText';
-import { IconSymbol } from '@/components/ui/IconSymbol';
-import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { Button } from '@/components/Button';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
+import { IconSymbol } from '@/components/ui/IconSymbol';
+import { adminState$ } from '@/utils/supabase/observables/admin-observables';
 import { getAllAlerts, logAdminAction } from '@/utils/supabase/services/admin-service';
-import { adminState$, getFilteredAlerts } from '@/utils/supabase/observables/admin-observables';
-import { useSelector } from '@legendapp/state/react';
 import { Alert } from '@/utils/supabase/types';
+import { useSelector } from '@legendapp/state/react';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import React, { useEffect, useState } from 'react';
+import { FlatList, Modal, RefreshControl, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 interface AlertItemProps {
   alert: Alert & { seniors?: any };
@@ -155,7 +155,7 @@ export function AdminAlertCenter() {
 
   const getFilteredAlerts = () => {
     if (!severityFilter) return alerts;
-    return alerts.filter(a => a.severity === severityFilter);
+    return alerts?.filter(a => a.severity === severityFilter);
   };
 
   if (loading) {
@@ -183,7 +183,7 @@ export function AdminAlertCenter() {
           
           <View style={styles.statCard}>
             <ThemedText style={styles.statValue}>
-              {alerts.filter(a => !a.is_handled).length}
+              {alerts?.filter(a => !a.is_handled).length}
             </ThemedText>
             <ThemedText style={styles.statLabel}>Non traitées</ThemedText>
           </View>
@@ -437,7 +437,7 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   alertItem: {
-    backgroundColor: '#FFFFFF',
+    // backgroundColor: '#FFFFFF',
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E5EA',

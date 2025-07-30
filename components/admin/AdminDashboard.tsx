@@ -1,13 +1,13 @@
-import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
-import { router } from 'expo-router';
-import { ThemedView } from '@/components/ThemedView';
-import { ThemedText } from '@/components/ThemedText';
-import { IconSymbol } from '@/components/ui/IconSymbol';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
-import { getGlobalStats, PlatformStats } from '@/utils/supabase/services/admin-service';
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
+import { IconSymbol } from '@/components/ui/IconSymbol';
 import { adminState$ } from '@/utils/supabase/observables/admin-observables';
+import { PlatformStats, getGlobalStats } from '@/utils/supabase/services/admin-service';
 import { useSelector } from '@legendapp/state/react';
+import { router } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 interface StatCardProps {
   title: string;
@@ -277,6 +277,7 @@ export function AdminDashboard() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    // paddingTop: 10,
   },
   content: {
     padding: 20,
@@ -325,7 +326,7 @@ const styles = StyleSheet.create({
   statCard: {
     flex: 1,
     minWidth: '45%',
-    backgroundColor: '#F5F5F5',
+    // backgroundColor: '#F5F5F5',
     borderRadius: 12,
     padding: 16,
     margin: 8,
@@ -363,7 +364,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   userTypesContainer: {
-    backgroundColor: '#F5F5F5',
+    // backgroundColor: '#F5F5F5',
     borderRadius: 12,
     padding: 16,
   },
@@ -405,7 +406,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   activityContainer: {
-    backgroundColor: '#F5F5F5',
+    // backgroundColor: '#F5F5F5',
     borderRadius: 12,
     padding: 16,
   },

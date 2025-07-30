@@ -1,17 +1,17 @@
-import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, FlatList, TextInput, TouchableOpacity, Alert } from 'react-native';
-import { router } from 'expo-router';
-import { ThemedView } from '@/components/ThemedView';
-import { ThemedText } from '@/components/ThemedText';
-import { IconSymbol } from '@/components/ui/IconSymbol';
-import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { Button } from '@/components/Button';
-import { getAllSeniors, exportDataToCSV, logAdminAction } from '@/utils/supabase/services/admin-service';
-import { adminState$, updateAdminFilters, getFilteredSeniors } from '@/utils/supabase/observables/admin-observables';
-import { useSelector } from '@legendapp/state/react';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
+import { IconSymbol } from '@/components/ui/IconSymbol';
+import { adminState$, getFilteredSeniors, updateAdminFilters } from '@/utils/supabase/observables/admin-observables';
+import { exportDataToCSV, getAllSeniors, logAdminAction } from '@/utils/supabase/services/admin-service';
 import { Senior } from '@/utils/supabase/types';
+import { useSelector } from '@legendapp/state/react';
 import * as FileSystem from 'expo-file-system';
+import { router } from 'expo-router';
 import * as Sharing from 'expo-sharing';
+import React, { useEffect, useState } from 'react';
+import { Alert, FlatList, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 
 interface SeniorItemProps {
   senior: Senior;
@@ -247,6 +247,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     minWidth: 0,
+    backgroundColor: 'black',
   },
   exportButtonText: {
     fontSize: 14,
@@ -267,7 +268,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    backgroundColor: '#FFFFFF',
+    // backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E5E5EA',
   },

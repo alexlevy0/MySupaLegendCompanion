@@ -1,22 +1,22 @@
-import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, FlatList, TextInput, TouchableOpacity, Alert, Modal } from 'react-native';
-import { ThemedView } from '@/components/ThemedView';
-import { ThemedText } from '@/components/ThemedText';
-import { IconSymbol } from '@/components/ui/IconSymbol';
-import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { Button } from '@/components/Button';
-import { Picker } from '@react-native-picker/picker';
-import { 
-  getAllUsers, 
-  updateUserStatus, 
-  changeUserRole, 
-  deleteUser,
-  logAdminAction 
-} from '@/utils/supabase/services/admin-service';
-import { adminState$, updateAdminFilters, getFilteredUsers } from '@/utils/supabase/observables/admin-observables';
-import { useSelector } from '@legendapp/state/react';
-import { MyCompanionUser, UserType } from '@/utils/supabase/types';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
+import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useMyCompanionAuth } from '@/utils/supabase/auth/auth-hooks';
+import { adminState$, getFilteredUsers, updateAdminFilters } from '@/utils/supabase/observables/admin-observables';
+import {
+  changeUserRole,
+  deleteUser,
+  getAllUsers,
+  logAdminAction,
+  updateUserStatus
+} from '@/utils/supabase/services/admin-service';
+import { MyCompanionUser, UserType } from '@/utils/supabase/types';
+import { useSelector } from '@legendapp/state/react';
+import { Picker } from '@react-native-picker/picker';
+import React, { useEffect, useState } from 'react';
+import { Alert, FlatList, Modal, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 
 interface UserItemProps {
   user: MyCompanionUser;
@@ -31,7 +31,7 @@ function UserItem({ user, currentUserId, onStatusToggle, onRoleChange, onDelete 
   const userTypeLabel = getUserTypeLabel(user.user_type);
   
   return (
-    <View style={styles.userItem}>
+    <View style={[styles.userItem]}>
       <View style={styles.userHeader}>
         <View style={[styles.userAvatar, { backgroundColor: getUserTypeColor(user.user_type) + '20' }]}>
           <IconSymbol 
@@ -499,7 +499,7 @@ const styles = StyleSheet.create({
   },
   userItem: {
     padding: 16,
-    backgroundColor: '#FFFFFF',
+    // backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E5E5EA',
   },
