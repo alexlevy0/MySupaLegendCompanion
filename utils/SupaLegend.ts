@@ -2,6 +2,9 @@
 // FICHIER D'INDEX - RÉEXPORTE TOUT DEPUIS LES MODULES
 // =====================================================
 
+// Initialisation (doit être importé en premier)
+import "./supabase/init";
+
 // Client et configuration
 export { supabase, customSynced, generateId } from "./supabase/client";
 

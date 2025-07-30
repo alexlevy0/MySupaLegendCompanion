@@ -61,7 +61,3 @@ export const customSynced = configureSynced(syncedSupabase, {
   fieldUpdatedAt: "updated_at",
   fieldDeleted: "deleted",
 });
-
-// Initialiser l'authentification au démarrage
-import { initializeAuth } from "./auth/auth-state";
-initializeAuth();
