@@ -1,9 +1,9 @@
-import React, { useEffect } from 'react';
-import { StyleSheet, SafeAreaView } from 'react-native';
 import { ThemedView } from '@/components/ThemedView';
-import { AdminRoute } from '@/components/admin/AdminRoute';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
+import { AdminRoute } from '@/components/admin/AdminRoute';
 import { subscribeToAdminData, unsubscribeFromAdminData } from '@/utils/supabase/observables/admin-observables';
+import React, { useEffect } from 'react';
+import { SafeAreaView, StyleSheet } from 'react-native';
 
 export default function AdminScreen() {
   useEffect(() => {

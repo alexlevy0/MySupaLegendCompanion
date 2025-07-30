@@ -12,7 +12,13 @@ import { useMyCompanionAuth } from "@/utils/SupaLegend";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
-  const { isFamily, isSAAD, isAdmin, isSenior } = useMyCompanionAuth();
+  const { isFamily, isSAAD, isAdmin, isSenior, loading } = useMyCompanionAuth();
+
+  // Déterminer quels tabs afficher selon le type d'utilisateur
+  const shouldShowSeniors = isFamily || isSAAD || isAdmin;
+  const shouldShowDashboard = isSenior;
+  const shouldShowAlerts = isFamily || isSAAD || isAdmin;
+  const shouldShowAdmin = isAdmin;
 
   return (
     <Tabs
@@ -41,64 +47,53 @@ export default function TabLayout() {
       />
 
       {/* Écran Seniors - visible pour famille et SAAD */}
-      {(isFamily || isSAAD) && (
-        <Tabs.Screen
-          name="seniors"
-          options={{
-            title: "Seniors",
-            tabBarIcon: ({ color }) => (
-              <IconSymbol size={28} name="person.2.fill" color={color} />
-            ),
-          }}
-        />
-      )}
+      <Tabs.Screen
+        name="seniors"
+        options={{
+          title: "Seniors",
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="person.2.fill" color={color} />
+          ),
+          // Masquer le tab si l'utilisateur n'a pas les permissions
+          href: shouldShowSeniors || loading ? undefined : null,
+          // Alternative : utiliser tabBarButton
+          // tabBarButton: shouldShowSeniors ? HapticTab : () => null,
+        }}
+      />
 
       {/* Écran Dashboard - visible pour seniors */}
-      {isSenior && (
-        <Tabs.Screen
-          name="dashboard"
-          options={{
-            title: "Dashboard",
-            tabBarIcon: ({ color }) => (
-              <IconSymbol size={28} name="chart.bar.fill" color={color} />
-            ),
-          }}
-        />
-      )}
+      <Tabs.Screen
+        name="dashboard"
+        options={{
+          title: "Dashboard",
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="chart.bar.fill" color={color} />
+          ),
+          href: shouldShowDashboard || loading ? undefined : null,
+        }}
+      />
 
       {/* Écran Alertes - visible pour famille, SAAD et admin */}
-      {(isFamily || isSAAD || isAdmin) && (
-        <Tabs.Screen
-          name="alerts"
-          options={{
-            title: "Alertes",
-            tabBarIcon: ({ color }) => (
-              <IconSymbol size={28} name="bell.fill" color={color} />
-            ),
-          }}
-        />
-      )}
+      <Tabs.Screen
+        name="alerts"
+        options={{
+          title: "Alertes",
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="bell.fill" color={color} />
+          ),
+          href: shouldShowAlerts || loading ? undefined : null,
+        }}
+      />
 
       {/* Écran Admin - visible uniquement pour les administrateurs */}
-      {isAdmin && (
-        <Tabs.Screen
-          name="admin"
-          options={{
-            title: "Admin",
-            tabBarIcon: ({ color }) => (
-              <IconSymbol size={28} name="crown.fill" color={color} />
-            ),
-          }}
-        />
-      )}
-
       <Tabs.Screen
-        name="explore"
+        name="admin"
         options={{
-          title: "Explorer",
+          title: "Admin",
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="paperplane.fill" color={color} />
+            <IconSymbol size={28} name="crown.fill" color={color} />
           ),
+          href: shouldShowAdmin || loading ? undefined : null,
         }}
       />
 
