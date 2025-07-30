@@ -1,25 +1,25 @@
 // SeniorsListScreen.tsx (mis à jour avec EditSeniorForm)
 import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    FlatList,
-    Modal,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Modal,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 import AddSeniorForm from "@/components/AddSeniorForm";
 import EditSeniorForm from "@/components/EditSeniorForm";
 import FamilySharingScreen from "@/components/FamilySharingScreen";
 import {
-    deleteSenior,
-    getSeniorStats,
-    getUserSeniors,
-    useMyCompanionAuth,
+  deleteSenior,
+  getSeniorStats,
+  getUserSeniors,
+  useMyCompanionAuth,
 } from "@/utils/SupaLegend";
 
 interface Senior {

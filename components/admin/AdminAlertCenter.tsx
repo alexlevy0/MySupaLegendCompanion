@@ -1,16 +1,26 @@
-import { Button } from '@/components/Button';
-import { LoadingSpinner } from '@/components/LoadingSpinner';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-import { IconSymbol } from '@/components/ui/IconSymbol';
-import { adminState$ } from '@/utils/supabase/observables/admin-observables';
-import { getAllAlerts, logAdminAction } from '@/utils/supabase/services/admin-service';
-import { Alert } from '@/utils/supabase/types';
-import { useSelector } from '@legendapp/state/react';
-import { formatDistanceToNow } from 'date-fns';
-import { fr } from 'date-fns/locale';
-import React, { useEffect, useState } from 'react';
-import { FlatList, Modal, RefreshControl, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Button } from "@/components/Button";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { ThemedText } from "@/components/ThemedText";
+import { ThemedView } from "@/components/ThemedView";
+import { IconSymbol } from "@/components/ui/IconSymbol";
+import { adminState$ } from "@/utils/supabase/observables/admin-observables";
+import {
+  getAllAlerts,
+  logAdminAction,
+} from "@/utils/supabase/services/admin-service";
+import { Alert } from "@/utils/supabase/types";
+import { useSelector } from "@legendapp/state/react";
+import { formatDistanceToNow } from "date-fns";
+import { fr } from "date-fns/locale";
+import React, { useEffect, useState } from "react";
+import {
+  FlatList,
+  Modal,
+  RefreshControl,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 interface AlertItemProps {
   alert: Alert & { seniors?: any };
@@ -19,60 +29,71 @@ interface AlertItemProps {
 
 function AlertItem({ alert, onPress }: AlertItemProps) {
   const severityColors = {
-    low: '#34C759',
-    medium: '#FF9500',
-    high: '#FF3B30',
-    critical: '#C70000',
+    low: "#34C759",
+    medium: "#FF9500",
+    high: "#FF3B30",
+    critical: "#C70000",
   };
 
   const typeIcons = {
-    chute: 'figure.fall',
-    health: 'heart.text.square.fill',
-    emergency: 'exclamationmark.triangle.fill',
-    activity: 'figure.walk.motion',
-    well_being: 'face.smiling.fill',
+    chute: "figure.fall",
+    health: "heart.text.square.fill",
+    emergency: "exclamationmark.triangle.fill",
+    activity: "figure.walk.motion",
+    well_being: "face.smiling.fill",
   };
 
   return (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={[
         styles.alertItem,
-        { borderLeftColor: severityColors[alert.severity] }
+        { borderLeftColor: severityColors[alert.severity] },
       ]}
       onPress={() => onPress(alert)}
     >
       <View style={styles.alertHeader}>
-        <View style={[styles.alertIcon, { backgroundColor: severityColors[alert.severity] + '20' }]}>
-          <IconSymbol 
-            name={typeIcons[alert.type] || 'bell.fill'} 
-            size={24} 
-            color={severityColors[alert.severity]} 
+        <View
+          style={[
+            styles.alertIcon,
+            { backgroundColor: severityColors[alert.severity] + "20" },
+          ]}
+        >
+          <IconSymbol
+            name={typeIcons[alert.type] || "bell.fill"}
+            size={24}
+            color={severityColors[alert.severity]}
           />
         </View>
-        
+
         <View style={styles.alertContent}>
           <View style={styles.alertTitleRow}>
             <ThemedText style={styles.alertTitle}>{alert.title}</ThemedText>
             {!alert.is_handled && (
-              <View style={[styles.badge, { backgroundColor: severityColors[alert.severity] }]}>
+              <View
+                style={[
+                  styles.badge,
+                  { backgroundColor: severityColors[alert.severity] },
+                ]}
+              >
                 <ThemedText style={styles.badgeText}>Non traitée</ThemedText>
               </View>
             )}
           </View>
-          
+
           <ThemedText style={styles.alertSenior}>
-            {alert.seniors?.first_name} {alert.seniors?.last_name} • {alert.seniors?.phone}
+            {alert.seniors?.first_name} {alert.seniors?.last_name} •{" "}
+            {alert.seniors?.phone}
           </ThemedText>
-          
+
           <ThemedText style={styles.alertTime}>
-            {formatDistanceToNow(new Date(alert.created_at), { 
+            {formatDistanceToNow(new Date(alert.created_at), {
               addSuffix: true,
-              locale: fr 
+              locale: fr,
             })}
           </ThemedText>
         </View>
       </View>
-      
+
       {alert.message && (
         <ThemedText style={styles.alertMessage} numberOfLines={2}>
           {alert.message}
@@ -89,26 +110,35 @@ export function AdminAlertCenter() {
   const [modalVisible, setModalVisible] = useState(false);
   const [severityFilter, setSeverityFilter] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  
+
+  const getFilteredAlerts = () => {
+    if (!severityFilter) return alerts;
+    return alerts?.filter((a) => a.severity === severityFilter);
+  };
   // Observer les alertes
   const alerts = useSelector(getFilteredAlerts);
   const totalAlerts = useSelector(() => adminState$.allAlerts.get().length);
-  const criticalCount = useSelector(() => 
-    adminState$.allAlerts.get().filter(a => a.severity === 'critical' && !a.is_handled).length
+  const criticalCount = useSelector(
+    () =>
+      adminState$.allAlerts
+        .get()
+        .filter((a) => a.severity === "critical" && !a.is_handled).length
   );
 
   const loadAlerts = async () => {
     try {
       setError(null);
       adminState$.loading.alerts.set(true);
-      
+
       const allAlerts = await getAllAlerts({ limit: 100 });
       adminState$.allAlerts.set(allAlerts);
-      
-      await logAdminAction('view_all_alerts', undefined, { count: allAlerts.length });
+
+      await logAdminAction("view_all_alerts", undefined, {
+        count: allAlerts.length,
+      });
     } catch (err) {
-      console.error('[AdminAlertCenter] Erreur lors du chargement:', err);
-      setError('Impossible de charger les alertes');
+      console.error("[AdminAlertCenter] Erreur lors du chargement:", err);
+      setError("Impossible de charger les alertes");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -123,39 +153,36 @@ export function AdminAlertCenter() {
   const handleAlertPress = (alert: Alert) => {
     setSelectedAlert(alert);
     setModalVisible(true);
-    logAdminAction('view_alert_details', alert.id, { severity: alert.severity });
+    logAdminAction("view_alert_details", alert.id, {
+      severity: alert.severity,
+    });
   };
 
   const handleMarkAsHandled = async () => {
     if (!selectedAlert) return;
-    
+
     try {
       // TODO: Implémenter la mise à jour du statut de l'alerte
-      await logAdminAction('handle_alert', selectedAlert.id);
-      
+      await logAdminAction("handle_alert", selectedAlert.id);
+
       // Mettre à jour localement
       const alerts = adminState$.allAlerts.get();
-      const index = alerts.findIndex(a => a.id === selectedAlert.id);
+      const index = alerts.findIndex((a) => a.id === selectedAlert.id);
       if (index !== -1) {
         const updatedAlerts = [...alerts];
         updatedAlerts[index] = { ...updatedAlerts[index], is_handled: true };
         adminState$.allAlerts.set(updatedAlerts);
       }
-      
+
       setModalVisible(false);
     } catch (error) {
-      console.error('[AdminAlertCenter] Erreur lors du traitement:', error);
+      console.error("[AdminAlertCenter] Erreur lors du traitement:", error);
     }
   };
 
   const onRefresh = () => {
     setRefreshing(true);
     loadAlerts();
-  };
-
-  const getFilteredAlerts = () => {
-    if (!severityFilter) return alerts;
-    return alerts?.filter(a => a.severity === severityFilter);
   };
 
   if (loading) {
@@ -175,38 +202,42 @@ export function AdminAlertCenter() {
             <ThemedText style={styles.statValue}>{totalAlerts}</ThemedText>
             <ThemedText style={styles.statLabel}>Total</ThemedText>
           </View>
-          
+
           <View style={[styles.statCard, styles.criticalCard]}>
-            <ThemedText style={[styles.statValue, styles.criticalValue]}>{criticalCount}</ThemedText>
+            <ThemedText style={[styles.statValue, styles.criticalValue]}>
+              {criticalCount}
+            </ThemedText>
             <ThemedText style={styles.statLabel}>Critiques</ThemedText>
           </View>
-          
+
           <View style={styles.statCard}>
             <ThemedText style={styles.statValue}>
-              {alerts?.filter(a => !a.is_handled).length}
+              {alerts?.filter((a) => !a.is_handled).length}
             </ThemedText>
             <ThemedText style={styles.statLabel}>Non traitées</ThemedText>
           </View>
         </View>
-        
+
         {/* Filtres par sévérité */}
         <FlatList
           horizontal
-          data={[null, 'critical', 'high', 'medium', 'low']}
-          keyExtractor={(item) => item || 'all'}
+          data={[null, "critical", "high", "medium", "low"]}
+          keyExtractor={(item) => item || "all"}
           renderItem={({ item }) => (
             <TouchableOpacity
               style={[
                 styles.filterChip,
-                severityFilter === item && styles.filterChipActive
+                severityFilter === item && styles.filterChipActive,
               ]}
               onPress={() => setSeverityFilter(item)}
             >
-              <ThemedText style={[
-                styles.filterChipText,
-                severityFilter === item && styles.filterChipTextActive
-              ]}>
-                {item ? getSeverityLabel(item) : 'Toutes'}
+              <ThemedText
+                style={[
+                  styles.filterChipText,
+                  severityFilter === item && styles.filterChipTextActive,
+                ]}
+              >
+                {item ? getSeverityLabel(item) : "Toutes"}
               </ThemedText>
             </TouchableOpacity>
           )}
@@ -256,63 +287,78 @@ export function AdminAlertCenter() {
             {selectedAlert && (
               <>
                 <View style={styles.modalHeader}>
-                  <ThemedText style={styles.modalTitle}>{selectedAlert.title}</ThemedText>
+                  <ThemedText style={styles.modalTitle}>
+                    {selectedAlert.title}
+                  </ThemedText>
                   <TouchableOpacity onPress={() => setModalVisible(false)}>
-                    <IconSymbol name="xmark.circle.fill" size={24} color="#C7C7CC" />
+                    <IconSymbol
+                      name="xmark.circle.fill"
+                      size={24}
+                      color="#C7C7CC"
+                    />
                   </TouchableOpacity>
                 </View>
-                
+
                 <View style={styles.modalBody}>
                   <View style={styles.modalInfoRow}>
                     <ThemedText style={styles.modalLabel}>Senior:</ThemedText>
                     <ThemedText style={styles.modalValue}>
-                      {selectedAlert.seniors?.first_name} {selectedAlert.seniors?.last_name}
+                      {selectedAlert.seniors?.first_name}{" "}
+                      {selectedAlert.seniors?.last_name}
                     </ThemedText>
                   </View>
-                  
+
                   <View style={styles.modalInfoRow}>
                     <ThemedText style={styles.modalLabel}>Sévérité:</ThemedText>
-                    <ThemedText style={[
-                      styles.modalValue,
-                      { color: getSeverityColor(selectedAlert.severity) }
-                    ]}>
+                    <ThemedText
+                      style={[
+                        styles.modalValue,
+                        { color: getSeverityColor(selectedAlert.severity) },
+                      ]}
+                    >
                       {getSeverityLabel(selectedAlert.severity)}
                     </ThemedText>
                   </View>
-                  
+
                   <View style={styles.modalInfoRow}>
                     <ThemedText style={styles.modalLabel}>Type:</ThemedText>
                     <ThemedText style={styles.modalValue}>
                       {getAlertTypeLabel(selectedAlert.type)}
                     </ThemedText>
                   </View>
-                  
+
                   <View style={styles.modalInfoRow}>
                     <ThemedText style={styles.modalLabel}>Date:</ThemedText>
                     <ThemedText style={styles.modalValue}>
-                      {new Date(selectedAlert.created_at).toLocaleString('fr-FR')}
+                      {new Date(selectedAlert.created_at).toLocaleString(
+                        "fr-FR"
+                      )}
                     </ThemedText>
                   </View>
-                  
+
                   {selectedAlert.message && (
                     <View style={styles.modalMessageContainer}>
-                      <ThemedText style={styles.modalLabel}>Message:</ThemedText>
+                      <ThemedText style={styles.modalLabel}>
+                        Message:
+                      </ThemedText>
                       <ThemedText style={styles.modalMessage}>
                         {selectedAlert.message}
                       </ThemedText>
                     </View>
                   )}
-                  
+
                   {selectedAlert.context && (
                     <View style={styles.modalMessageContainer}>
-                      <ThemedText style={styles.modalLabel}>Contexte:</ThemedText>
+                      <ThemedText style={styles.modalLabel}>
+                        Contexte:
+                      </ThemedText>
                       <ThemedText style={styles.modalMessage}>
                         {JSON.stringify(selectedAlert.context, null, 2)}
                       </ThemedText>
                     </View>
                   )}
                 </View>
-                
+
                 <View style={styles.modalActions}>
                   {!selectedAlert.is_handled && (
                     <Button
@@ -339,32 +385,48 @@ export function AdminAlertCenter() {
 
 function getSeverityLabel(severity: string): string {
   switch (severity) {
-    case 'critical': return 'Critique';
-    case 'high': return 'Élevée';
-    case 'medium': return 'Moyenne';
-    case 'low': return 'Faible';
-    default: return severity;
+    case "critical":
+      return "Critique";
+    case "high":
+      return "Élevée";
+    case "medium":
+      return "Moyenne";
+    case "low":
+      return "Faible";
+    default:
+      return severity;
   }
 }
 
 function getSeverityColor(severity: string): string {
   switch (severity) {
-    case 'critical': return '#C70000';
-    case 'high': return '#FF3B30';
-    case 'medium': return '#FF9500';
-    case 'low': return '#34C759';
-    default: return '#8E8E93';
+    case "critical":
+      return "#C70000";
+    case "high":
+      return "#FF3B30";
+    case "medium":
+      return "#FF9500";
+    case "low":
+      return "#34C759";
+    default:
+      return "#8E8E93";
   }
 }
 
 function getAlertTypeLabel(type: string): string {
   switch (type) {
-    case 'chute': return 'Chute détectée';
-    case 'health': return 'Santé';
-    case 'emergency': return 'Urgence';
-    case 'activity': return 'Activité';
-    case 'well_being': return 'Bien-être';
-    default: return type;
+    case "chute":
+      return "Chute détectée";
+    case "health":
+      return "Santé";
+    case "emergency":
+      return "Urgence";
+    case "activity":
+      return "Activité";
+    case "well_being":
+      return "Bien-être";
+    default:
+      return type;
   }
 }
 
@@ -375,29 +437,29 @@ const styles = StyleSheet.create({
   header: {
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
+    borderBottomColor: "#E5E5EA",
   },
   statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexDirection: "row",
+    justifyContent: "space-around",
     marginBottom: 16,
   },
   statCard: {
-    alignItems: 'center',
+    alignItems: "center",
     padding: 12,
     flex: 1,
   },
   criticalCard: {
-    backgroundColor: '#FF3B3010',
+    backgroundColor: "#FF3B3010",
     borderRadius: 8,
     marginHorizontal: 8,
   },
   statValue: {
     fontSize: 28,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   criticalValue: {
-    color: '#FF3B30',
+    color: "#FF3B30",
   },
   statLabel: {
     fontSize: 12,
@@ -411,27 +473,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: "#F2F2F7",
     marginRight: 8,
   },
   filterChipActive: {
-    backgroundColor: '#007AFF',
+    backgroundColor: "#007AFF",
   },
   filterChipText: {
     fontSize: 14,
-    color: '#3C3C43',
+    color: "#3C3C43",
   },
   filterChipTextActive: {
-    color: 'white',
+    color: "white",
   },
   errorContainer: {
     padding: 20,
-    alignItems: 'center',
+    alignItems: "center",
   },
   errorText: {
-    color: '#FF3B30',
+    color: "#FF3B30",
     marginBottom: 16,
-    textAlign: 'center',
+    textAlign: "center",
   },
   listContent: {
     paddingBottom: 20,
@@ -440,32 +502,32 @@ const styles = StyleSheet.create({
     // backgroundColor: '#FFFFFF',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
+    borderBottomColor: "#E5E5EA",
     borderLeftWidth: 4,
   },
   alertHeader: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginBottom: 8,
   },
   alertIcon: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: 12,
   },
   alertContent: {
     flex: 1,
   },
   alertTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   alertTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     flex: 1,
   },
   badge: {
@@ -475,9 +537,9 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   badgeText: {
-    color: 'white',
+    color: "white",
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   alertSenior: {
     fontSize: 14,
@@ -496,8 +558,8 @@ const styles = StyleSheet.create({
   },
   emptyContainer: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: 60,
   },
   emptyText: {
@@ -507,25 +569,25 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
   },
   modalContent: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 24,
-    maxHeight: '80%',
+    maxHeight: "80%",
   },
   modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 20,
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     flex: 1,
     marginRight: 16,
   },
@@ -533,8 +595,8 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   modalInfoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     paddingVertical: 8,
   },
   modalLabel: {
@@ -543,7 +605,7 @@ const styles = StyleSheet.create({
   },
   modalValue: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   modalMessageContainer: {
     marginTop: 16,
@@ -551,7 +613,7 @@ const styles = StyleSheet.create({
   modalMessage: {
     fontSize: 14,
     marginTop: 8,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: "#F2F2F7",
     padding: 12,
     borderRadius: 8,
   },
