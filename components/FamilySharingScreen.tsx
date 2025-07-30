@@ -10,6 +10,7 @@ import {
     Alert,
     FlatList,
     SafeAreaView,
+    ScrollView,
     StyleSheet,
     Switch,
     Text,
@@ -291,7 +292,7 @@ export default function FamilySharingScreen({
 
   // Formulaire d'invitation
   const renderInviteForm = () => (
-    <View style={styles.inviteForm}>
+    <ScrollView style={styles.inviteForm}>
       <Text style={styles.formTitle}>👨‍👩‍👧‍👦 Inviter un membre de famille</Text>
 
       <View style={styles.inputContainer}>
@@ -436,7 +437,7 @@ export default function FamilySharingScreen({
           )}
         </TouchableOpacity>
       </View>
-    </View>
+    </ScrollView>
   );
 
   return (
