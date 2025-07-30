@@ -82,5 +82,13 @@ export function useMyCompanionAuth() {
     ),
     reloadProfile,
     isUpdatingProfile,
+    // Propriétés admin supplémentaires
+    canAccessAllData: userProfile?.user_type === "admin" && userProfile?.is_active === true,
+    adminPermissions: {
+      canManageUsers: userProfile?.user_type === "admin",
+      canViewAllSeniors: userProfile?.user_type === "admin",
+      canAccessGlobalStats: userProfile?.user_type === "admin",
+      canManageAlerts: userProfile?.user_type === "admin",
+    },
   };
 }

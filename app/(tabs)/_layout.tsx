@@ -79,6 +79,19 @@ export default function TabLayout() {
         />
       )}
 
+      {/* Écran Admin - visible uniquement pour les administrateurs */}
+      {isAdmin && (
+        <Tabs.Screen
+          name="admin"
+          options={{
+            title: "Admin",
+            tabBarIcon: ({ color }) => (
+              <IconSymbol size={28} name="crown.fill" color={color} />
+            ),
+          }}
+        />
+      )}
+
       <Tabs.Screen
         name="explore"
         options={{
