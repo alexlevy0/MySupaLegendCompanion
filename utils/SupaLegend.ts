@@ -73,7 +73,29 @@ export type Alert = Database["public"]["Tables"]["alerts"]["Row"];
 // =====================================================
 // OBSERVABLES MYCOMPANION
 // =====================================================
-
+export interface SeniorData {
+  id: string;
+  user_id?: string;
+  first_name: string;
+  last_name: string;
+  phone: string;
+  birth_date?: string;
+  preferred_call_time: string;
+  call_frequency: number;
+  personality_profile?: any;
+  medical_context?: any;
+  interests?: any;
+  communication_preferences?: any;
+  emergency_contact?: string;
+  address?: {
+    street?: string;
+    city?: string;
+    postal_code?: string;
+  };
+  created_at: string;
+  updated_at: string;
+  deleted?: boolean;
+}
 // 👥 USERS
 export const users$ = observable(
   customSynced({
@@ -1295,72 +1317,72 @@ export async function getUserSeniors(userId?: string): Promise<any[]> {
 }
 
 // ✅ Fonction corrigée pour mettre à jour un senior
-export async function updateSenior(
-  seniorId: string,
-  updates: Partial<SeniorCreateData>
-): Promise<void> {
-  try {
-    console.log("🔄 Updating senior profile:", seniorId);
+// export async function updateSenior(
+//   seniorId: string,
+//   updates: Partial<SeniorCreateData>
+// ): Promise<void> {
+//   try {
+//     console.log("🔄 Updating senior profile:", seniorId);
 
-    // Nettoyer le téléphone si fourni
-    if (updates.phone) {
-      updates.phone = updates.phone.replace(/[\s\.\-]/g, "");
-      const phoneRegex = /^(\+33|0)[1-9][0-9]{8}$/;
-      if (!phoneRegex.test(updates.phone)) {
-        throw new Error("Format de téléphone invalide");
-      }
-    }
+//     // Nettoyer le téléphone si fourni
+//     if (updates.phone) {
+//       updates.phone = updates.phone.replace(/[\s\.\-]/g, "");
+//       const phoneRegex = /^(\+33|0)[1-9][0-9]{8}$/;
+//       if (!phoneRegex.test(updates.phone)) {
+//         throw new Error("Format de téléphone invalide");
+//       }
+//     }
 
-    // Préparer les données pour la mise à jour
-    const updateData: any = {
-      ...updates,
-      updated_at: new Date().toISOString(),
-    };
+//     // Préparer les données pour la mise à jour
+//     const updateData: any = {
+//       ...updates,
+//       updated_at: new Date().toISOString(),
+//     };
 
-    // Convertir les objets en JSON si nécessaire
-    if (updates.address) {
-      updateData.address = JSON.stringify(updates.address);
-    }
-    if (updates.personality_profile) {
-      updateData.personality_profile = JSON.stringify(
-        updates.personality_profile
-      );
-    }
-    if (updates.medical_context) {
-      updateData.medical_context = JSON.stringify(updates.medical_context);
-    }
-    if (updates.interests) {
-      updateData.interests = JSON.stringify(updates.interests);
-    }
-    if (updates.communication_preferences) {
-      updateData.communication_preferences = JSON.stringify(
-        updates.communication_preferences
-      );
-    }
+//     // Convertir les objets en JSON si nécessaire
+//     if (updates.address) {
+//       updateData.address = JSON.stringify(updates.address);
+//     }
+//     if (updates.personality_profile) {
+//       updateData.personality_profile = JSON.stringify(
+//         updates.personality_profile
+//       );
+//     }
+//     if (updates.medical_context) {
+//       updateData.medical_context = JSON.stringify(updates.medical_context);
+//     }
+//     if (updates.interests) {
+//       updateData.interests = JSON.stringify(updates.interests);
+//     }
+//     if (updates.communication_preferences) {
+//       updateData.communication_preferences = JSON.stringify(
+//         updates.communication_preferences
+//       );
+//     }
 
-    const { error } = await supabase
-      .from("seniors")
-      .update(updateData)
-      .eq("id", seniorId);
+//     const { error } = await supabase
+//       .from("seniors")
+//       .update(updateData)
+//       .eq("id", seniorId);
 
-    if (error) {
-      throw error;
-    }
+//     if (error) {
+//       throw error;
+//     }
 
-    // Mettre à jour l'observable local
-    if (seniors$[seniorId]) {
-      seniors$[seniorId].assign({
-        ...updates,
-        updated_at: new Date().toISOString(),
-      });
-    }
+//     // Mettre à jour l'observable local
+//     if (seniors$[seniorId]) {
+//       seniors$[seniorId].assign({
+//         ...updates,
+//         updated_at: new Date().toISOString(),
+//       });
+//     }
 
-    console.log("✅ Senior profile updated successfully");
-  } catch (error) {
-    console.error("❌ Failed to update senior:", error);
-    throw error;
-  }
-}
+//     console.log("✅ Senior profile updated successfully");
+//   } catch (error) {
+//     console.error("❌ Failed to update senior:", error);
+//     throw error;
+//   }
+// }
 
 // ✅ Fonction pour valider un numéro de téléphone français
 export function validateFrenchPhone(phone: string): {
@@ -1860,5 +1882,406 @@ export async function getSeniorSharingStats(seniorId: string) {
       totalMembers: 0,
       reportsThisMonth: 0,
     };
+  }
+}
+export async function getSeniorById(
+  seniorId: string
+): Promise<SeniorData | null> {
+  try {
+    console.log("📊 Loading senior by ID:", seniorId);
+
+    // Vérifier que l'utilisateur connecté a accès à ce senior
+    const currentUser = authState$.user.get();
+    if (!currentUser) {
+      throw new Error("User not authenticated");
+    }
+
+    // Récupérer le senior avec vérification d'accès
+    const { data: senior, error } = await supabase
+      .from("seniors")
+      .select(
+        `
+          id,
+          user_id,
+          first_name,
+          last_name,
+          phone,
+          birth_date,
+          preferred_call_time,
+          call_frequency,
+          personality_profile,
+          medical_context,
+          interests,
+          communication_preferences,
+          emergency_contact,
+          address,
+          created_at,
+          updated_at,
+          deleted,
+          family_members!inner (
+            user_id,
+            deleted
+          )
+        `
+      )
+      .eq("id", seniorId)
+      .eq("deleted", false)
+      .eq("family_members.user_id", currentUser.id)
+      .eq("family_members.deleted", false)
+      .single();
+
+    if (error) {
+      if (error.code === "PGRST116") {
+        throw new Error("Senior non trouvé ou accès non autorisé");
+      }
+      throw error;
+    }
+
+    // Transformer les données JSON en objets
+    const seniorData: SeniorData = {
+      ...senior,
+      address: senior.address
+        ? typeof senior.address === "string"
+          ? JSON.parse(senior.address)
+          : senior.address
+        : null,
+      personality_profile: senior.personality_profile
+        ? typeof senior.personality_profile === "string"
+          ? JSON.parse(senior.personality_profile)
+          : senior.personality_profile
+        : null,
+      medical_context: senior.medical_context
+        ? typeof senior.medical_context === "string"
+          ? JSON.parse(senior.medical_context)
+          : senior.medical_context
+        : null,
+      interests: senior.interests
+        ? typeof senior.interests === "string"
+          ? JSON.parse(senior.interests)
+          : senior.interests
+        : null,
+      communication_preferences: senior.communication_preferences
+        ? typeof senior.communication_preferences === "string"
+          ? JSON.parse(senior.communication_preferences)
+          : senior.communication_preferences
+        : null,
+    };
+
+    console.log(
+      "✅ Senior loaded successfully:",
+      seniorData.first_name,
+      seniorData.last_name
+    );
+    return seniorData;
+  } catch (error) {
+    console.error("❌ Failed to get senior by ID:", error);
+    throw error;
+  }
+}
+
+// ✅ Fonction de mise à jour d'un senior (version améliorée)
+export async function updateSenior(
+  seniorId: string,
+  updates: Partial<SeniorCreateData>
+): Promise<void> {
+  try {
+    console.log("🔄 Updating senior profile:", seniorId);
+
+    // Vérifier que l'utilisateur connecté a accès à ce senior
+    const currentUser = authState$.user.get();
+    if (!currentUser) {
+      throw new Error("User not authenticated");
+    }
+
+    // Vérifier l'accès au senior
+    const { data: accessCheck, error: accessError } = await supabase
+      .from("family_members")
+      .select("id, access_level")
+      .eq("senior_id", seniorId)
+      .eq("user_id", currentUser.id)
+      .eq("deleted", false)
+      .single();
+
+    if (accessError) {
+      throw new Error("Accès non autorisé à ce senior");
+    }
+
+    // Nettoyer le téléphone si fourni
+    if (updates.phone) {
+      const phoneValidation = validateFrenchPhone(updates.phone);
+      if (!phoneValidation.isValid) {
+        throw new Error(
+          phoneValidation.error || "Format de téléphone invalide"
+        );
+      }
+      updates.phone = phoneValidation.cleaned;
+    }
+
+    // Préparer les données pour la mise à jour
+    const updateData: any = {
+      ...updates,
+      updated_at: new Date().toISOString(),
+    };
+
+    // Convertir les objets en JSON si nécessaire
+    if (updates.address) {
+      updateData.address = JSON.stringify(updates.address);
+    }
+    if (updates.personality_profile) {
+      updateData.personality_profile = JSON.stringify(
+        updates.personality_profile
+      );
+    }
+    if (updates.medical_context) {
+      updateData.medical_context = JSON.stringify(updates.medical_context);
+    }
+    if (updates.interests) {
+      updateData.interests = JSON.stringify(updates.interests);
+    }
+    if (updates.communication_preferences) {
+      updateData.communication_preferences = JSON.stringify(
+        updates.communication_preferences
+      );
+    }
+
+    // Vérifier l'unicité du téléphone si modifié
+    if (updates.phone) {
+      const { data: existingSenior, error: checkError } = await supabase
+        .from("seniors")
+        .select("id, first_name, last_name")
+        .eq("phone", updates.phone)
+        .eq("deleted", false)
+        .neq("id", seniorId)
+        .maybeSingle();
+
+      if (checkError && checkError.code !== "PGRST116") {
+        throw checkError;
+      }
+
+      if (existingSenior) {
+        throw new Error(
+          `Ce numéro est déjà utilisé par ${existingSenior.first_name} ${existingSenior.last_name}`
+        );
+      }
+    }
+
+    // Effectuer la mise à jour
+    const { error: updateError } = await supabase
+      .from("seniors")
+      .update(updateData)
+      .eq("id", seniorId);
+
+    if (updateError) {
+      if (
+        updateError.code === "23505" &&
+        updateError.message.includes("phone")
+      ) {
+        throw new Error(
+          "Ce numéro de téléphone est déjà utilisé par un autre senior"
+        );
+      }
+      throw updateError;
+    }
+
+    // Mettre à jour l'observable local
+    if (seniors$[seniorId]) {
+      seniors$[seniorId].assign({
+        ...updates,
+        updated_at: new Date().toISOString(),
+      });
+    }
+
+    console.log("✅ Senior profile updated successfully");
+  } catch (error) {
+    console.error("❌ Failed to update senior:", error);
+    throw error;
+  }
+}
+
+// ✅ Supprimer un senior (soft delete)
+export async function deleteSenior(seniorId: string): Promise<void> {
+  try {
+    console.log("🗑️ Deleting senior:", seniorId);
+
+    // Vérifier que l'utilisateur connecté a accès à ce senior
+    const currentUser = authState$.user.get();
+    if (!currentUser) {
+      throw new Error("User not authenticated");
+    }
+
+    // Vérifier l'accès au senior et qu'il est contact principal
+    const { data: familyRelation, error: accessError } = await supabase
+      .from("family_members")
+      .select("id, is_primary_contact, access_level")
+      .eq("senior_id", seniorId)
+      .eq("user_id", currentUser.id)
+      .eq("deleted", false)
+      .single();
+
+    if (accessError) {
+      throw new Error("Accès non autorisé à ce senior");
+    }
+
+    // Seul le contact principal ou un utilisateur avec accès "full" peut supprimer
+    if (
+      !familyRelation.is_primary_contact &&
+      familyRelation.access_level !== "full"
+    ) {
+      throw new Error(
+        "Seul le contact principal peut supprimer ce profil senior"
+      );
+    }
+
+    // Soft delete du senior
+    const { error: deleteError } = await supabase
+      .from("seniors")
+      .update({
+        deleted: true,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", seniorId);
+
+    if (deleteError) {
+      throw deleteError;
+    }
+
+    // Soft delete de toutes les relations familiales
+    const { error: relationsError } = await supabase
+      .from("family_members")
+      .update({
+        deleted: true,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("senior_id", seniorId);
+
+    if (relationsError) {
+      console.warn(
+        "Warning: Failed to delete family relations:",
+        relationsError
+      );
+    }
+
+    // Mettre à jour l'observable local
+    if (seniors$[seniorId]) {
+      seniors$[seniorId].delete();
+    }
+
+    console.log("✅ Senior deleted successfully");
+  } catch (error) {
+    console.error("❌ Failed to delete senior:", error);
+    throw error;
+  }
+}
+
+// ✅ Dupliquer un senior (créer un nouveau profil basé sur un existant)
+export async function duplicateSenior(
+  seniorId: string,
+  newData: { first_name: string; last_name: string; phone: string }
+): Promise<string> {
+  try {
+    console.log("📋 Duplicating senior:", seniorId);
+
+    // Récupérer le senior source
+    const sourceSenior = await getSeniorById(seniorId);
+    if (!sourceSenior) {
+      throw new Error("Senior source non trouvé");
+    }
+
+    // Préparer les données du nouveau senior
+    const duplicateData: SeniorCreateData = {
+      first_name: newData.first_name,
+      last_name: newData.last_name,
+      phone: newData.phone,
+      birth_date: sourceSenior.birth_date,
+      preferred_call_time: sourceSenior.preferred_call_time,
+      call_frequency: sourceSenior.call_frequency,
+      emergency_contact: newData.phone, // Utiliser le nouveau numéro
+      address: sourceSenior.address,
+      personality_profile: sourceSenior.personality_profile,
+      medical_context: null, // Ne pas copier les infos médicales
+      interests: sourceSenior.interests,
+      communication_preferences: sourceSenior.communication_preferences,
+    };
+
+    // Créer le nouveau senior
+    const newSeniorId = await addSenior(duplicateData);
+
+    console.log("✅ Senior duplicated successfully:", newSeniorId);
+    return newSeniorId;
+  } catch (error) {
+    console.error("❌ Failed to duplicate senior:", error);
+    throw error;
+  }
+}
+
+// ✅ Obtenir l'historique des modifications d'un senior
+export async function getSeniorHistory(seniorId: string) {
+  try {
+    console.log("📊 Loading senior history:", seniorId);
+
+    // Pour l'instant, on retourne des données mock
+    // Dans une vraie implémentation, vous auriez une table d'audit
+    const mockHistory = [
+      {
+        id: "1",
+        action: "updated",
+        field: "preferred_call_time",
+        old_value: "08:00",
+        new_value: "09:00",
+        updated_by: "Marie Dubois",
+        updated_at: new Date(
+          Date.now() - 2 * 24 * 60 * 60 * 1000
+        ).toISOString(),
+      },
+      {
+        id: "2",
+        action: "created",
+        field: null,
+        old_value: null,
+        new_value: null,
+        updated_by: "Marie Dubois",
+        updated_at: new Date(
+          Date.now() - 30 * 24 * 60 * 60 * 1000
+        ).toISOString(),
+      },
+    ];
+
+    return mockHistory;
+  } catch (error) {
+    console.error("❌ Failed to get senior history:", error);
+    return [];
+  }
+}
+
+// ✅ Exporter les données d'un senior (pour sauvegarde)
+export async function exportSeniorData(seniorId: string) {
+  try {
+    console.log("📤 Exporting senior data:", seniorId);
+
+    const senior = await getSeniorById(seniorId);
+    if (!senior) {
+      throw new Error("Senior non trouvé");
+    }
+
+    // Récupérer les données associées
+    const [familyMembers, callsStats, alertsStats] = await Promise.all([
+      getFamilyMembers(seniorId),
+      getSeniorStats(seniorId),
+      // Vous pourriez ajouter d'autres données ici
+    ]);
+
+    const exportData = {
+      senior,
+      family_members: familyMembers,
+      statistics: callsStats,
+      exported_at: new Date().toISOString(),
+      export_version: "1.0",
+    };
+
+    console.log("✅ Senior data exported successfully");
+    return exportData;
+  } catch (error) {
+    console.error("❌ Failed to export senior data:", error);
+    throw error;
   }
 }

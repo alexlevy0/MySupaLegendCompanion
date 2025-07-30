@@ -1,3 +1,4 @@
+// SeniorsListScreen.tsx (mis à jour avec EditSeniorForm)
 import React, { useEffect, useState } from "react";
 import {
     ActivityIndicator,
@@ -12,8 +13,10 @@ import {
 } from "react-native";
 
 import AddSeniorForm from "@/components/AddSeniorForm";
+import EditSeniorForm from "@/components/EditSeniorForm";
 import FamilySharingScreen from "@/components/FamilySharingScreen";
 import {
+    deleteSenior,
     getSeniorStats,
     getUserSeniors,
     useMyCompanionAuth,
@@ -64,6 +67,7 @@ export default function SeniorsListScreen() {
 
   // États pour les modals
   const [showAddSenior, setShowAddSenior] = useState(false);
+  const [showEditSenior, setShowEditSenior] = useState(false);
   const [showFamilySharing, setShowFamilySharing] = useState(false);
   const [selectedSenior, setSelectedSenior] = useState<Senior | null>(null);
 
@@ -126,6 +130,25 @@ export default function SeniorsListScreen() {
     loadSeniors(); // Recharger la liste
   };
 
+  // Gérer l'édition d'un senior
+  const handleEditSenior = (senior: Senior) => {
+    console.log("✏️ Opening edit form for:", senior.seniors.first_name);
+    setSelectedSenior(senior);
+    setShowEditSenior(true);
+  };
+
+  const handleEditSeniorSuccess = (seniorId: string) => {
+    console.log("✅ Senior updated successfully:", seniorId);
+    setShowEditSenior(false);
+    setSelectedSenior(null);
+    loadSeniors(); // Recharger la liste
+  };
+
+  const handleCloseEditSenior = () => {
+    setShowEditSenior(false);
+    setSelectedSenior(null);
+  };
+
   // Gérer l'ouverture du partage familial
   const handleManageFamily = (senior: Senior) => {
     console.log("👨‍👩‍👧‍👦 Opening family sharing for:", senior.seniors.first_name);
@@ -140,6 +163,39 @@ export default function SeniorsListScreen() {
     loadSeniors(); // Recharger pour avoir les dernières données
   };
 
+  // Gérer la suppression d'un senior
+  const handleDeleteSenior = (senior: Senior) => {
+    Alert.alert(
+      "⚠️ Supprimer le profil",
+      `Êtes-vous sûr de vouloir supprimer le profil de ${senior.seniors.first_name} ${senior.seniors.last_name} ?\n\n⚠️ Cette action est irréversible et supprimera :\n• Toutes les conversations\n• Tous les rapports\n• Toutes les alertes\n• Tous les partages familiaux`,
+      [
+        {
+          text: "Annuler",
+          style: "cancel",
+        },
+        {
+          text: "Supprimer",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteSenior(senior.seniors.id);
+              Alert.alert(
+                "✅ Profil supprimé",
+                `Le profil de ${senior.seniors.first_name} a été supprimé avec succès.`
+              );
+              loadSeniors(); // Recharger la liste
+            } catch (error: any) {
+              Alert.alert(
+                "Erreur",
+                error.message || "Impossible de supprimer le profil."
+              );
+            }
+          },
+        },
+      ]
+    );
+  };
+
   // Calculer l'âge à partir de la date de naissance
   const calculateAge = (birthDate?: string) => {
     if (!birthDate) return null;
@@ -148,7 +204,10 @@ export default function SeniorsListScreen() {
     const age = today.getFullYear() - birth.getFullYear();
     const monthDiff = today.getMonth() - birth.getMonth();
 
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < birth.getDate())
+    ) {
       return age - 1;
     }
     return age;
@@ -168,6 +227,47 @@ export default function SeniorsListScreen() {
     return `Il y a ${Math.floor(diffInDays / 30)} mois`;
   };
 
+  // Options contextuelles pour un senior
+  const showSeniorOptions = (senior: Senior) => {
+    const options = [
+      {
+        text: "📊 Voir détails",
+        onPress: () => Alert.alert("Info", "Fonctionnalité en développement"),
+      },
+      {
+        text: "✏️ Éditer",
+        onPress: () => handleEditSenior(senior),
+      },
+      {
+        text: "👨‍👩‍👧‍👦 Gérer famille",
+        onPress: () => handleManageFamily(senior),
+      },
+      {
+        text: "📞 Historique appels",
+        onPress: () => Alert.alert("Info", "Fonctionnalité en développement"),
+      },
+    ];
+
+    // Ajouter l'option de suppression seulement pour le contact principal
+    if (senior.is_primary_contact) {
+      options.push({
+        text: "🗑️ Supprimer",
+        onPress: () => handleDeleteSenior(senior),
+      });
+    }
+
+    options.push({
+      text: "Annuler",
+      onPress: () => {},
+    });
+
+    Alert.alert(
+      `${senior.seniors.first_name} ${senior.seniors.last_name}`,
+      "Choisissez une action :",
+      options
+    );
+  };
+
   // Rendu d'un senior
   const renderSenior = ({ item }: { item: Senior }) => {
     const senior = item.seniors;
@@ -178,7 +278,11 @@ export default function SeniorsListScreen() {
     const age = calculateAge(senior.birth_date);
 
     return (
-      <View style={styles.seniorCard}>
+      <TouchableOpacity
+        style={styles.seniorCard}
+        onPress={() => showSeniorOptions(item)}
+        onLongPress={() => showSeniorOptions(item)}
+      >
         {/* Header avec infos principales */}
         <View style={styles.seniorHeader}>
           <View style={styles.seniorInfo}>
@@ -186,18 +290,13 @@ export default function SeniorsListScreen() {
               {senior.first_name} {senior.last_name}
               {item.is_primary_contact && " 👑"}
             </Text>
-            
+
             <View style={styles.seniorDetails}>
+              <Text style={styles.seniorDetail}>📞 {senior.phone}</Text>
+              {age && <Text style={styles.seniorDetail}>🎂 {age} ans</Text>}
               <Text style={styles.seniorDetail}>
-                📞 {senior.phone}
-              </Text>
-              {age && (
-                <Text style={styles.seniorDetail}>
-                  🎂 {age} ans
-                </Text>
-              )}
-              <Text style={styles.seniorDetail}>
-                ⏰ Appels à {senior.preferred_call_time} ({senior.call_frequency}x/jour)
+                ⏰ Appels à {senior.preferred_call_time} (
+                {senior.call_frequency}x/jour)
               </Text>
             </View>
 
@@ -208,7 +307,8 @@ export default function SeniorsListScreen() {
 
           <View style={styles.seniorBadge}>
             <Text style={styles.seniorInitials}>
-              {senior.first_name.charAt(0)}{senior.last_name.charAt(0)}
+              {senior.first_name.charAt(0)}
+              {senior.last_name.charAt(0)}
             </Text>
           </View>
         </View>
@@ -239,36 +339,39 @@ export default function SeniorsListScreen() {
           </View>
         </View>
 
-        {/* Actions */}
-        <View style={styles.actionsContainer}>
+        {/* Actions rapides */}
+        <View style={styles.quickActionsContainer}>
           <TouchableOpacity
-            style={[styles.actionButton, styles.primaryAction]}
-            onPress={() => {
-              // Navigation vers les détails du senior
-              Alert.alert("Info", "Voir les détails de " + senior.first_name);
+            style={[styles.quickActionButton, styles.editAction]}
+            onPress={(e) => {
+              e.stopPropagation();
+              handleEditSenior(item);
             }}
           >
-            <Text style={styles.primaryActionText}>📊 Voir détails</Text>
+            <Text style={styles.quickActionText}>✏️</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.actionButton, styles.secondaryAction]}
-            onPress={() => handleManageFamily(item)}
+            style={[styles.quickActionButton, styles.familyAction]}
+            onPress={(e) => {
+              e.stopPropagation();
+              handleManageFamily(item);
+            }}
           >
-            <Text style={styles.secondaryActionText}>👨‍👩‍👧‍👦 Famille</Text>
+            <Text style={styles.quickActionText}>👨‍👩‍👧‍👦</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.actionButton, styles.secondaryAction]}
-            onPress={() => {
-              // Navigation vers l'historique des appels
-              Alert.alert("Info", "Historique des appels de " + senior.first_name);
+            style={[styles.quickActionButton, styles.callsAction]}
+            onPress={(e) => {
+              e.stopPropagation();
+              Alert.alert("Info", "Historique des appels - En développement");
             }}
           >
-            <Text style={styles.secondaryActionText}>📞 Appels</Text>
+            <Text style={styles.quickActionText}>📞</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -342,6 +445,21 @@ export default function SeniorsListScreen() {
           onSuccess={handleAddSeniorSuccess}
           onCancel={() => setShowAddSenior(false)}
         />
+      </Modal>
+
+      {/* Modal - Éditer un senior */}
+      <Modal
+        visible={showEditSenior}
+        animationType="slide"
+        presentationStyle="pageSheet"
+      >
+        {selectedSenior && (
+          <EditSeniorForm
+            seniorId={selectedSenior.seniors.id}
+            onSuccess={handleEditSeniorSuccess}
+            onCancel={handleCloseEditSenior}
+          />
+        )}
       </Modal>
 
       {/* Modal - Partage familial */}
@@ -490,34 +608,34 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#64748b",
   },
-  actionsContainer: {
+  quickActionsContainer: {
     flexDirection: "row",
-    gap: 8,
+    justifyContent: "center",
+    gap: 16,
   },
-  actionButton: {
-    flex: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 8,
+  quickActionButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: "center",
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
-  primaryAction: {
-    backgroundColor: "#4f46e5",
+  editAction: {
+    backgroundColor: "#f59e0b",
   },
-  primaryActionText: {
-    color: "white",
-    fontSize: 12,
-    fontWeight: "600",
+  familyAction: {
+    backgroundColor: "#10b981",
   },
-  secondaryAction: {
-    backgroundColor: "#f1f5f9",
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
+  callsAction: {
+    backgroundColor: "#6366f1",
   },
-  secondaryActionText: {
-    color: "#4f46e5",
-    fontSize: 12,
-    fontWeight: "600",
+  quickActionText: {
+    fontSize: 16,
   },
   emptyContainer: {
     flex: 1,
