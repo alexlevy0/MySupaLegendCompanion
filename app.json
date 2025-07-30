@@ -1,11 +1,11 @@
 {
   "expo": {
     "name": "MySupaLegendCompanion",
-    "slug": "MySupaLegendCompanion",
+    "slug": "mysupalegendcompanion",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "mysupalegendcompanion",
+    "scheme": "com.mycompanion.app",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -37,6 +37,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "720f0310-51fb-4cec-b832-3491c191028a"
+      }
+    },
+    "owner": "alexlevy0"
   }
 }

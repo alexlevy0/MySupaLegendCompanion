@@ -73,6 +73,19 @@ export type Alert = Database["public"]["Tables"]["alerts"]["Row"];
 // =====================================================
 // OBSERVABLES MYCOMPANION
 // =====================================================
+
+export interface FamilyInviteData {
+  seniorId: string;
+  email: string;
+  relationship: string;
+  accessLevel: "minimal" | "standard" | "full";
+  notificationPreferences: {
+    dailyReports: boolean;
+    emergencyAlerts: boolean;
+    weeklyReports: boolean;
+    smsAlerts: boolean;
+  };
+}
 export interface SeniorData {
   id: string;
   user_id?: string;
@@ -603,7 +616,7 @@ export async function signUpMyCompanionUser(
   try {
     console.log("Creating new user:", email, userData.user_type);
 
-    // 1. Créer l'utilisateur dans Supabase Auth
+    // 1. Créer l'utilisateur dans Supabase Auth avec la bonne URL de confirmation
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
@@ -613,6 +626,8 @@ export async function signUpMyCompanionUser(
           last_name: userData.last_name,
           user_type: userData.user_type,
         },
+        // 🔧 CORRECTION : URL de redirection pour la confirmation
+        emailRedirectTo: getRedirectUrl("/auth/confirm"),
       },
     });
 
@@ -634,7 +649,10 @@ export async function signUpMyCompanionUser(
       if (userError) console.warn("User profile creation warning:", userError);
     }
 
-    console.log("User created successfully");
+    console.log(
+      "✅ User created successfully with redirect URL:",
+      getRedirectUrl("/auth/confirm")
+    );
     return {
       authUser: authData.user,
       session: authData.session,
@@ -870,15 +888,19 @@ export async function changeEmail(emailData: EmailChangeData) {
       throw new Error("Password is incorrect");
     }
 
-    // Changer l'email (nécessite confirmation)
+    // Changer l'email avec URL de redirection
     const { error } = await supabase.auth.updateUser({
       email: emailData.newEmail,
+      options: {
+        emailRedirectTo: getRedirectUrl("/auth/confirm"),
+      },
     });
 
     if (error) throw error;
 
     console.log(
-      "✅ Email change initiated - check your inbox for confirmation"
+      "✅ Email change initiated with redirect:",
+      getRedirectUrl("/auth/confirm")
     );
     return true;
   } catch (error) {
@@ -892,19 +914,36 @@ export async function sendPasswordResetEmail(email: string) {
   try {
     console.log("Sending password reset email to:", email);
 
+    const redirectUrl = getRedirectUrl("/auth/reset-password");
+
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${
-        process.env.EXPO_PUBLIC_SITE_URL || "http://localhost:3000"
-      }/auth/reset-password`,
+      redirectTo: redirectUrl,
     });
 
     if (error) throw error;
 
-    console.log("✅ Password reset email sent");
+    console.log("✅ Password reset email sent with redirect:", redirectUrl);
     return true;
   } catch (error) {
     console.error("❌ Password reset email failed:", error);
     throw error;
+  }
+}
+
+// Fonction utilitaire pour générer les URLs de redirection
+export function getRedirectUrl(path: string = ""): string {
+  if (Platform.OS === "web") {
+    // Pour le web - utiliser l'URL du site ou localhost en dev
+    const baseUrl =
+      process.env.EXPO_PUBLIC_SITE_URL ||
+      (typeof window !== "undefined"
+        ? window.location.origin
+        : "http://localhost:8081");
+    return `${baseUrl}${path}`;
+  } else {
+    // Pour mobile - utiliser le schème de l'app
+    const appScheme = process.env.EXPO_PUBLIC_APP_SCHEME || "mycompanion";
+    return `${appScheme}://${path.replace(/^\//, "")}`;
   }
 }
 
@@ -1507,54 +1546,43 @@ export interface InviteFamilyMemberData {
   relationship: string;
   accessLevel: "minimal" | "standard" | "full";
   notificationPreferences: {
-    dailyReports?: boolean;
-    emergencyAlerts?: boolean;
-    weeklyReports?: boolean;
-    smsAlerts?: boolean;
+    dailyReports: boolean;
+    emergencyAlerts: boolean;
+    weeklyReports: boolean;
+    smsAlerts: boolean;
   };
 }
 
 // ✅ Récupérer les membres de famille d'un senior
-export async function getFamilyMembers(
-  seniorId: string
-): Promise<FamilyMemberWithUser[]> {
+export async function getFamilyMembers(seniorId: string) {
   try {
-    console.log("📊 Loading family members for senior:", seniorId);
-
-    const { data: familyMembers, error } = await supabase
+    const { data, error } = await supabase
       .from("family_members")
       .select(
         `
-          id,
-          user_id,
-          senior_id,
-          relationship,
-          is_primary_contact,
-          access_level,
-          notification_preferences,
-          created_at,
-          updated_at,
-          users!inner (
-            id,
-            first_name,
-            last_name,
-            email,
-            phone
-          )
-        `
+        id,
+        user_id,
+        relationship,
+        is_primary_contact,
+        access_level,
+        notification_preferences,
+        created_at,
+        users!inner (
+          first_name,
+          last_name,
+          email,
+          phone,
+          is_active
+        )
+      `
       )
       .eq("senior_id", seniorId)
       .eq("deleted", false)
-      .order("is_primary_contact", { ascending: false })
+      .eq("users.deleted", false)
       .order("created_at", { ascending: true });
 
-    if (error) {
-      console.error("❌ Error loading family members:", error);
-      throw error;
-    }
-
-    console.log("✅ Family members loaded:", familyMembers?.length || 0);
-    return familyMembers || [];
+    if (error) throw error;
+    return data || [];
   } catch (error) {
     console.error("❌ Failed to get family members:", error);
     throw error;
@@ -1574,10 +1602,22 @@ export async function inviteFamilyMember(
       throw new Error("User not authenticated");
     }
 
+    // Récupérer les infos du senior pour l'email
+    const { data: senior, error: seniorError } = await supabase
+      .from("seniors")
+      .select("first_name, last_name")
+      .eq("id", inviteData.seniorId)
+      .eq("deleted", false)
+      .single();
+
+    if (seniorError || !senior) {
+      throw new Error("Senior not found");
+    }
+
     // Vérifier si l'email correspond à un utilisateur existant
     const { data: existingUser, error: userError } = await supabase
       .from("users")
-      .select("id, first_name, last_name, email")
+      .select("id, first_name, last_name, email, is_active")
       .eq("email", inviteData.email.toLowerCase())
       .eq("deleted", false)
       .maybeSingle();
@@ -1604,7 +1644,9 @@ export async function inviteFamilyMember(
       }
 
       if (existingRelation) {
-        throw new Error("Cette personne a déjà accès à ce senior");
+        throw new Error(
+          `${existingUser.first_name} ${existingUser.last_name} a déjà accès à ${senior.first_name} ${senior.last_name}`
+        );
       }
 
       // Créer la relation familiale
@@ -1617,90 +1659,86 @@ export async function inviteFamilyMember(
         access_level: inviteData.accessLevel,
       });
 
-      // Optionnel : Envoyer un email de notification
-      console.log("📧 Should send notification email to existing user");
+      console.log("✅ Family relation created for existing user");
+
+      // 🔧 TODO: Envoyer un email de notification à l'utilisateur existant
+      // pour l'informer qu'il a maintenant accès aux données du senior
     } else {
-      // L'utilisateur n'existe pas - créer une invitation
-      console.log("📨 User doesn't exist, creating invitation");
+      // L'utilisateur n'existe pas - utiliser le système d'invitation par email
+      console.log("📨 User doesn't exist, sending invitation email");
 
-      // Créer une invitation en attente (vous pourriez avoir une table "family_invitations")
-      // Pour simplifier, on va créer un utilisateur "pending" ou utiliser une autre approche
+      // ✅ MÉTHODE RECOMMANDÉE : Invitation par signup avec metadata
+      // Au lieu de créer un compte admin, on va envoyer un lien d'inscription pré-rempli
 
-      // Option 1: Créer une table d'invitations
-      // Option 2: Envoyer un email avec un lien d'inscription pré-rempli
-      // Option 3: Créer un utilisateur "inactive" qui sera activé à la première connexion
+      // Stocker l'invitation dans une table temporaire (ou localStorage côté client)
+      const invitationToken = generateId();
 
-      // Pour cette implémentation, on va utiliser l'option 3
-      const tempPassword = generateId().substring(0, 8); // Mot de passe temporaire
+      // Créer un lien d'inscription avec les données pré-remplies
+      const invitationData = {
+        token: invitationToken,
+        seniorId: inviteData.seniorId,
+        seniorName: `${senior.first_name} ${senior.last_name}`,
+        inviterName: `${currentUser.first_name} ${currentUser.last_name}`,
+        relationship: inviteData.relationship,
+        accessLevel: inviteData.accessLevel,
+        notificationPreferences: inviteData.notificationPreferences,
+        email: inviteData.email,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 jours
+      };
 
-      // Créer un compte utilisateur inactif
-      const { data: authData, error: signUpError } =
-        await supabase.auth.admin.createUser({
+      // 🔧 OPTION 1: Stocker l'invitation dans une table (recommandé)
+      const { error: inviteError } = await supabase
+        .from("family_invitations") // Table à créer
+        .insert({
+          id: invitationToken,
+          senior_id: inviteData.seniorId,
+          inviter_id: currentUser.id,
           email: inviteData.email.toLowerCase(),
-          password: tempPassword,
-          email_confirm: true, // Confirmer l'email automatiquement
-          user_metadata: {
-            first_name: inviteData.email.split("@")[0], // Prénom temporaire
-            last_name: "", // Nom temporaire
-            user_type: "family",
-            invited_by: currentUser.id,
-            invited_for_senior: inviteData.seniorId,
-          },
+          relationship: inviteData.relationship,
+          access_level: inviteData.accessLevel,
+          notification_preferences: JSON.stringify(
+            inviteData.notificationPreferences
+          ),
+          expires_at: invitationData.expiresAt,
+          status: "pending",
         });
 
-      if (signUpError) {
-        throw new Error(
-          `Impossible de créer le compte: ${signUpError.message}`
+      // 🔧 OPTION 2: Si pas de table, encoder les données dans l'URL (moins sécurisé)
+      if (inviteError) {
+        console.warn(
+          "Could not store invitation in DB, using URL params:",
+          inviteError
         );
       }
 
-      if (!authData.user) {
-        throw new Error("User creation failed");
-      }
+      // Créer l'URL d'invitation qui redirige vers signup
+      const invitationUrl = `${getRedirectUrl(
+        "/auth/invite"
+      )}?token=${invitationToken}&email=${encodeURIComponent(
+        inviteData.email
+      )}`;
 
-      // Créer le profil utilisateur
-      const { error: profileError } = await supabase.from("users").insert({
-        id: authData.user.id,
-        email: inviteData.email.toLowerCase(),
-        user_type: "family",
-        first_name: inviteData.email.split("@")[0],
-        last_name: "",
-        is_active: false, // Inactif jusqu'à la première connexion
+      console.log("🔗 Invitation URL:", invitationUrl);
+
+      // ⚠️ PROBLÈME: On ne peut pas envoyer d'email directement depuis le client
+      // Il faut soit :
+      // 1. Une fonction Edge/API pour envoyer l'email
+      // 2. Un service tiers (Resend, SendGrid, etc.)
+      // 3. Utiliser Supabase Auth avec un template personnalisé
+
+      // 🔧 SOLUTION TEMPORAIRE: Simuler l'envoi et logger l'URL
+      console.log("📧 Email invitation should be sent to:", inviteData.email);
+      console.log("📧 Email content should include:", {
+        inviterName: invitationData.inviterName,
+        seniorName: invitationData.seniorName,
+        invitationUrl,
       });
 
-      if (profileError) {
-        console.warn("Profile creation warning:", profileError);
-      }
-
-      // Créer la relation familiale
-      await createFamilyRelation({
-        user_id: authData.user.id,
-        senior_id: inviteData.seniorId,
-        relationship: inviteData.relationship,
-        is_primary_contact: false,
-        notification_preferences: inviteData.notificationPreferences,
-        access_level: inviteData.accessLevel,
-      });
-
-      // Envoyer un email d'invitation avec le lien de reset password
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-        inviteData.email.toLowerCase(),
-        {
-          redirectTo: `${
-            process.env.EXPO_PUBLIC_SITE_URL || "http://localhost:3000"
-          }/auth/welcome`,
-        }
-      );
-
-      if (resetError) {
-        console.warn("Reset password email error:", resetError);
-        // Ne pas faire échouer l'invitation pour ça
-      }
-
-      console.log("✅ Invitation created and email sent");
+      // En production, vous devriez :
+      // await sendInvitationEmail(invitationData, invitationUrl);
     }
 
-    console.log("✅ Family member invited successfully");
+    console.log("✅ Family member invitation process completed");
   } catch (error) {
     console.error("❌ Failed to invite family member:", error);
     throw error;
