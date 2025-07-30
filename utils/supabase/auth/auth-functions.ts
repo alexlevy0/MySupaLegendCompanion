@@ -216,6 +216,57 @@ export async function updateUserProfile(updates: ProfileUpdateData) {
   }
 }
 
+// Mettre à jour le profil utilisateur sans vérification d'authentification (pour tests)
+export async function updateUserProfileNoAuth(updates: ProfileUpdateData) {
+  try {
+    console.log("🔧 Updating user profile (no auth check):", updates);
+    
+    // Récupérer l'utilisateur actuel depuis l'état
+    const currentUser = authState$.user.get();
+    if (!currentUser) {
+      throw new Error("No user in state");
+    }
+
+    authState$.isUpdatingProfile.set(true);
+
+    // Update database directement avec l'ID de l'utilisateur en état
+    const { data, error } = await supabase
+      .from("users")
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq("id", currentUser.id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // ✅ Mise à jour immédiate de l'état local
+    authState$.user.set(data);
+
+    // ✅ Auth metadata en async (ne pas attendre)
+    if (updates.first_name || updates.last_name || updates.user_type) {
+      supabase.auth
+        .updateUser({
+          data: {
+            first_name: updates.first_name,
+            last_name: updates.last_name,
+            user_type: updates.user_type,
+          },
+        })
+        .catch(console.warn);
+    }
+
+    console.log("✅ Profile updated successfully (no auth):", data);
+    return data;
+  } catch (error) {
+    console.error("❌ Profile update failed (no auth):", error);
+    throw error;
+  } finally {
+    setTimeout(() => {
+      authState$.isUpdatingProfile.set(false);
+    }, 2000);
+  }
+}
+
 // Changer le mot de passe
 export async function changePassword(passwordData: PasswordChangeData) {
   try {
