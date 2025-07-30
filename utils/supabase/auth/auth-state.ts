@@ -205,49 +205,8 @@ export async function initializeAuth() {
   try {
     console.log("🚀 Initializing authentication...");
 
-    // Timeout de sécurité
-    const loadingTimeout = setTimeout(() => {
-      console.warn("⚠️ Auth loading timeout - forcing loading to false");
-      authState$.loading.set(false);
-      authState$.error.set("Authentication timeout");
-    }, 10000);
-
-    const {
-      data: { session },
-      error,
-    } = await supabase.auth.getSession();
-
-    if (error) {
-      console.error("❌ Session error:", error);
-      authState$.error.set(error.message);
-      authState$.loading.set(false);
-      clearTimeout(loadingTimeout);
-      return;
-    }
-
-    authState$.session.set(session);
-
-    if (session?.user) {
-      console.log("📧 Session found for:", session.user.email);
-      console.log("⏳ Waiting for onAuthStateChange to load profile...");
-    } else {
-      console.log("🚫 No session found");
-      authState$.loading.set(false);
-    }
-
-    // Marquer comme initialisé
-    authState$.hasInitialized.set(true);
-    clearTimeout(loadingTimeout);
-  } catch (error) {
-    console.error("❌ Auth initialization error:", error);
-    authState$.error.set("Failed to initialize authentication");
-    authState$.loading.set(false);
-    authState$.hasInitialized.set(true);
-  }
-}
-
-// ✅ Listener ultra-optimisé
-supabase.auth.onAuthStateChange(async (event, session) => {
+    // ✅ Configurer le listener d'authentification
+    supabase.auth.onAuthStateChange(async (event, session) => {
   console.log(
     `🔄 Auth state changed. Event: ${event}, Session user: ${
       session?.user?.email || "none"
@@ -289,7 +248,48 @@ supabase.auth.onAuthStateChange(async (event, session) => {
     authState$.loading.set(false);
     authState$.error.set(null);
   }
-});
+    });
+
+    // Timeout de sécurité
+    const loadingTimeout = setTimeout(() => {
+      console.warn("⚠️ Auth loading timeout - forcing loading to false");
+      authState$.loading.set(false);
+      authState$.error.set("Authentication timeout");
+    }, 10000);
+
+    const {
+      data: { session },
+      error,
+    } = await supabase.auth.getSession();
+
+    if (error) {
+      console.error("❌ Session error:", error);
+      authState$.error.set(error.message);
+      authState$.loading.set(false);
+      clearTimeout(loadingTimeout);
+      return;
+    }
+
+    authState$.session.set(session);
+
+    if (session?.user) {
+      console.log("📧 Session found for:", session.user.email);
+      console.log("⏳ Waiting for onAuthStateChange to load profile...");
+    } else {
+      console.log("🚫 No session found");
+      authState$.loading.set(false);
+    }
+
+    // Marquer comme initialisé
+    authState$.hasInitialized.set(true);
+    clearTimeout(loadingTimeout);
+  } catch (error) {
+    console.error("❌ Auth initialization error:", error);
+    authState$.error.set("Failed to initialize authentication");
+    authState$.loading.set(false);
+    authState$.hasInitialized.set(true);
+  }
+}
 
 // Fonction pour réinitialiser l'état d'authentification
 export function resetAuthState() {
