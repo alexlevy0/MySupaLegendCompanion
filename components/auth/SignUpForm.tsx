@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import {
     ActivityIndicator,
     Alert,
+    Platform,
     ScrollView,
     StyleSheet,
     Text,
@@ -107,18 +108,34 @@ export default function SignUpForm({ onToggleMode }: SignUpFormProps) {
               selectedValue={userType}
               onValueChange={setUserType}
               style={styles.picker}
+              mode="dropdown" // Force le mode dropdown sur Android
+              dropdownIconColor="#374151" // Couleur de l'icône dropdown
             >
-              <Picker.Item label={getUserTypeLabel("family")} value="family" />
-              <Picker.Item label={getUserTypeLabel("senior")} value="senior" />
+              <Picker.Item
+                label={getUserTypeLabel("family")}
+                value="family"
+                color="#374151" // Couleur du texte
+              />
+              <Picker.Item
+                label={getUserTypeLabel("senior")}
+                value="senior"
+                color="#374151"
+              />
               <Picker.Item
                 label={getUserTypeLabel("saad_admin")}
                 value="saad_admin"
+                color="#374151"
               />
               <Picker.Item
                 label={getUserTypeLabel("saad_worker")}
                 value="saad_worker"
+                color="#374151"
               />
-              <Picker.Item label={getUserTypeLabel("admin")} value="admin" />
+              <Picker.Item
+                label={getUserTypeLabel("admin")}
+                value="admin"
+                color="#374151"
+              />
             </Picker>
           </View>
           <Text style={styles.typeDescription}>
@@ -256,9 +273,42 @@ const styles = StyleSheet.create({
     borderColor: "#e5e7eb",
     borderRadius: 12,
     backgroundColor: "#f9fafb",
+    overflow: "hidden", // Important pour contenir le picker
+    ...Platform.select({
+      ios: {
+        // Sur iOS, le picker prend toute la hauteur disponible
+      },
+      android: {
+        // Sur Android, on force une hauteur minimum
+        minHeight: 50,
+      },
+      web: {
+        // Sur web, hauteur fixe
+        height: 50,
+      },
+    }),
   },
   picker: {
-    height: 50,
+    color: "#374151", // Couleur du texte par défaut
+    ...Platform.select({
+      ios: {
+        height: 180, // Hauteur par défaut sur iOS
+        color: "#374151",
+      },
+      android: {
+        height: 50,
+        color: "#374151", // Couleur du texte sur Android
+        backgroundColor: "transparent",
+      },
+      web: {
+        height: 50,
+        color: "#374151",
+        // Reset des styles web par défaut
+        border: "none",
+        outline: "none",
+        backgroundColor: "transparent",
+      },
+    }),
   },
   typeDescription: {
     fontSize: 12,
