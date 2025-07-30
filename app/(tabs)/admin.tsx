@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, SafeAreaView } from 'react-native';
 import { ThemedView } from '@/components/ThemedView';
 import { AdminRoute } from '@/components/admin/AdminRoute';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
@@ -18,15 +18,21 @@ export default function AdminScreen() {
 
   return (
     <AdminRoute>
-      <ThemedView style={styles.container}>
-        <AdminDashboard />
-      </ThemedView>
+      <SafeAreaView style={styles.container}>
+        <ThemedView style={styles.content}>
+          <AdminDashboard />
+        </ThemedView>
+      </SafeAreaView>
     </AdminRoute>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+    backgroundColor: '#F2F2F7',
+  },
+  content: {
     flex: 1,
   },
 });

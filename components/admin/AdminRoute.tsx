@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, SafeAreaView } from 'react-native';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import { Button } from '@/components/Button';
@@ -18,42 +18,46 @@ export function AdminRoute({ children }: AdminRouteProps) {
   // En cours de chargement
   if (loading) {
     return (
-      <ThemedView style={styles.container}>
-        <LoadingSpinner />
-      </ThemedView>
+      <SafeAreaView style={styles.container}>
+        <ThemedView style={styles.contentContainer}>
+          <LoadingSpinner />
+        </ThemedView>
+      </SafeAreaView>
     );
   }
   
   // Vérifier les permissions admin
   if (!isAdmin || !userProfile?.is_active) {
     return (
-      <ThemedView style={styles.container}>
-        <View style={styles.deniedContainer}>
-          <IconSymbol
-            name="exclamationmark.shield.fill"
-            size={80}
-            color="#FF3B30"
-            style={styles.icon}
-          />
-          
-          <ThemedText type="title" style={styles.title}>
-            Accès Refusé
-          </ThemedText>
-          
-          <ThemedText style={styles.message}>
-            Cette section est réservée aux administrateurs.
-            {!userProfile?.is_active && userProfile?.user_type === 'admin' && (
-              '\n\nVotre compte administrateur est actuellement désactivé.'
-            )}
-          </ThemedText>
-          
-          <Button
-            title="Retourner à l'accueil"
-            onPress={() => router.replace('/(tabs)')}
-            style={styles.button}
-          />
-        </View>
-      </ThemedView>
+      <SafeAreaView style={styles.container}>
+        <ThemedView style={styles.contentContainer}>
+          <View style={styles.deniedContainer}>
+            <IconSymbol
+              name="exclamationmark.shield.fill"
+              size={80}
+              color="#FF3B30"
+              style={styles.icon}
+            />
+            
+            <ThemedText type="title" style={styles.title}>
+              Accès Refusé
+            </ThemedText>
+            
+            <ThemedText style={styles.message}>
+              Cette section est réservée aux administrateurs.
+              {!userProfile?.is_active && userProfile?.user_type === 'admin' && (
+                '\n\nVotre compte administrateur est actuellement désactivé.'
+              )}
+            </ThemedText>
+            
+            <Button
+              title="Retourner à l'accueil"
+              onPress={() => router.replace('/(tabs)')}
+              style={styles.button}
+            />
+          </View>
+        </ThemedView>
+      </SafeAreaView>
     );
   }
   
@@ -71,6 +75,10 @@ export function AdminRoute({ children }: AdminRouteProps) {
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+    backgroundColor: '#F2F2F7',
+  },
+  contentContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',

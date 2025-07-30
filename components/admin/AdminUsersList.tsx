@@ -16,7 +16,7 @@ import { MyCompanionUser, UserType } from '@/utils/supabase/types';
 import { useSelector } from '@legendapp/state/react';
 import { Picker } from '@react-native-picker/picker';
 import React, { useEffect, useState } from 'react';
-import { Alert, FlatList, Modal, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, FlatList, Modal, StyleSheet, TextInput, TouchableOpacity, View, SafeAreaView } from 'react-native';
 
 interface UserItemProps {
   user: MyCompanionUser;

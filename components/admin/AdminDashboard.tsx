@@ -7,7 +7,7 @@ import { PlatformStats, getGlobalStats } from '@/utils/supabase/services/admin-s
 import { useSelector } from '@legendapp/state/react';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View, SafeAreaView } from 'react-native';
 
 interface StatCardProps {
   title: string;

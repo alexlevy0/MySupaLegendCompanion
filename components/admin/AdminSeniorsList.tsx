@@ -11,7 +11,7 @@ import * as FileSystem from 'expo-file-system';
 import { router } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import React, { useEffect, useState } from 'react';
-import { Alert, FlatList, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, FlatList, StyleSheet, TextInput, TouchableOpacity, View, SafeAreaView } from 'react-native';
 
 interface SeniorItemProps {
   senior: Senior;

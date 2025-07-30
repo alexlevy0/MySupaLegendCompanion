@@ -20,6 +20,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   View,
+  SafeAreaView,
 } from "react-native";
 
 interface AlertItemProps {
