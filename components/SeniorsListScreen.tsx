@@ -17,6 +17,7 @@ import EditSeniorForm from "@/components/EditSeniorForm";
 import FamilySharingScreen from "@/components/FamilySharingScreen";
 import JoinFamilyScreen from "@/components/JoinFamilyScreen";
 import { CallHistoryModal } from "@/components/CallHistoryModal";
+import SeniorDetailsModal from "@/components/SeniorDetailsModal";
 import {
   deleteSenior,
   getSeniorStats,
@@ -74,6 +75,7 @@ export default function SeniorsListScreen() {
   const [showFamilySharing, setShowFamilySharing] = useState(false);
   const [showJoinFamily, setShowJoinFamily] = useState(false);
   const [showCallHistory, setShowCallHistory] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedSenior, setSelectedSenior] = useState<Senior | null>(null);
   const [selectedSeniorForCalls, setSelectedSeniorForCalls] = useState<any | null>(null);
 
@@ -238,7 +240,10 @@ export default function SeniorsListScreen() {
     const options = [
       {
         text: "📊 Voir détails",
-        onPress: () => Alert.alert("Info", "Fonctionnalité en développement"),
+        onPress: () => {
+          setSelectedSenior(senior);
+          setShowDetailsModal(true);
+        },
       },
       {
         text: "✏️ Éditer",
@@ -548,6 +553,19 @@ export default function SeniorsListScreen() {
             setSelectedSeniorForCalls(null);
           }}
           senior={selectedSeniorForCalls}
+        />
+      )}
+
+      {/* Modal - Détails du senior */}
+      {selectedSenior && (
+        <SeniorDetailsModal
+          visible={showDetailsModal}
+          seniorId={selectedSenior.seniors.id}
+          seniorName={`${selectedSenior.seniors.first_name} ${selectedSenior.seniors.last_name}`}
+          onClose={() => {
+            setShowDetailsModal(false);
+            setSelectedSenior(null);
+          }}
         />
       )}
     </SafeAreaView>
