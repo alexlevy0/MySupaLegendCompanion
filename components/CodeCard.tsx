@@ -36,6 +36,34 @@ export default function CodeCard({
 }: CodeCardProps) {
   const [copyAnimValue] = useState(new Animated.Value(0));
   const [showCopied, setShowCopied] = useState(false);
+  const [codeAnimValue] = useState(new Animated.Value(0));
+  const [previousCode, setPreviousCode] = useState(code);
+  const [showNewCode, setShowNewCode] = useState(false);
+
+  // Animation quand le code change
+  React.useEffect(() => {
+    if (code && code !== previousCode) {
+      setPreviousCode(code);
+      setShowNewCode(true);
+      
+      // Animation de "pulse" pour montrer le nouveau code
+      Animated.sequence([
+        Animated.timing(codeAnimValue, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(codeAnimValue, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
+
+      // Masquer le message après 3 secondes
+      setTimeout(() => setShowNewCode(false), 3000);
+    }
+  }, [code, previousCode, codeAnimValue]);
 
   const handleCopy = async () => {
     if (!code) return;
@@ -132,9 +160,48 @@ export default function CodeCard({
           <Text style={styles.title}>Code Famille</Text>
         </View>
 
+        {/* Message de nouveau code */}
+        {showNewCode && (
+          <Animated.View
+            style={[
+              styles.newCodeMessage,
+              {
+                opacity: codeAnimValue,
+                transform: [
+                  {
+                    translateY: codeAnimValue.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [-10, 0],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          >
+            <Ionicons name="checkmark-circle" size={16} color="#10b981" />
+            <Text style={styles.newCodeText}>Nouveau code généré !</Text>
+          </Animated.View>
+        )}
+
         {/* Zone du code */}
         <TouchableOpacity style={styles.codeContainer} onPress={handleCopy}>
-          <Text style={styles.code}>{code}</Text>
+          <Animated.Text 
+            style={[
+              styles.code,
+              {
+                transform: [
+                  {
+                    scale: codeAnimValue.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [1, 1.1],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          >
+            {code}
+          </Animated.Text>
           <View style={styles.copyIconContainer}>
             {showCopied ? (
               <Animated.View
@@ -376,6 +443,22 @@ const styles = StyleSheet.create({
   },
   generateButtonText: {
     color: "#fff",
+    fontWeight: "600",
+  },
+  newCodeMessage: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#f0fdf4",
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginBottom: 12,
+    gap: 6,
+  },
+  newCodeText: {
+    color: "#10b981",
+    fontSize: 14,
     fontWeight: "600",
   },
 });

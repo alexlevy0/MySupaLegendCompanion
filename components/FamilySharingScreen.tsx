@@ -114,10 +114,7 @@ export default function FamilySharingScreen({
       setFamilyCode(newCode);
       await loadFamilyCode();
       
-      Alert.alert(
-        "✅ Code généré !",
-        `Le code ${newCode} a été créé. Partagez-le avec les membres de votre famille.`
-      );
+      // Pas d'alerte, le code s'affiche directement dans CodeCard
     } catch (error: any) {
       Alert.alert(
         "Erreur",
