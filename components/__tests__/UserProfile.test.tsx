@@ -38,7 +38,7 @@ describe('UserProfile', () => {
     jest.clearAllMocks();
     (useMyCompanionAuth as jest.Mock).mockReturnValue(defaultAuthState);
     (getUserStats as jest.Mock).mockResolvedValue(mockStats);
-    (Alert.alert as jest.Mock).mockClear();
+    // Alert is already mocked in jest.setup.js
   });
 
   it('should render user information correctly', async () => {

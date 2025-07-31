@@ -14,7 +14,7 @@ describe('LoginForm', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (Alert.alert as jest.Mock).mockClear();
+    // Alert is already mocked in jest.setup.js
   });
 
   it('should render correctly', () => {

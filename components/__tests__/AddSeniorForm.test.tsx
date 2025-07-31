@@ -25,7 +25,7 @@ describe('AddSeniorForm', () => {
     (useMyCompanionAuth as jest.Mock).mockReturnValue({
       userProfile: mockUserProfile,
     });
-    (Alert.alert as jest.Mock).mockClear();
+    // Alert is already mocked in jest.setup.js
   });
 
   it('should render step 1 (info) correctly', () => {

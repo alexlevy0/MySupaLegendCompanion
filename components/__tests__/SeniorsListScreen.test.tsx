@@ -110,7 +110,7 @@ describe('SeniorsListScreen', () => {
     (getSeniorStats as jest.Mock).mockImplementation((seniorId) => 
       Promise.resolve(mockStats[seniorId])
     );
-    (Alert.alert as jest.Mock).mockClear();
+    // Alert is already mocked in jest.setup.js
   });
 
   it('should render loading state initially', () => {

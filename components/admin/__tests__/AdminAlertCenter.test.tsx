@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { Alert as RNAlert } from 'react-native';
-import AdminAlertCenter from '../AdminAlertCenter';
+import { AdminAlertCenter } from '../AdminAlertCenter';
 import { adminState$ } from '@/utils/supabase/observables/admin-observables';
 import { getAllAlerts, logAdminAction } from '@/utils/supabase/services/admin-service';
 import { formatDistanceToNow } from 'date-fns';
