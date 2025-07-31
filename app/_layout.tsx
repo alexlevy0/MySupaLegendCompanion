@@ -7,6 +7,8 @@ import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
+import { I18nextProvider } from "react-i18next";
+import i18n from "@/utils/i18n";
 import { useEffect } from "react";
 // import "react-native-reanimated/lib/reanimated2/js-reanimated/index";
 
@@ -33,14 +35,16 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <AuthWrapper>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="+not-found" />
-        </Stack>
-      </AuthWrapper>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <I18nextProvider i18n={i18n}>
+      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+        <AuthWrapper>
+          <Stack>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="+not-found" />
+          </Stack>
+        </AuthWrapper>
+        <StatusBar style="auto" />
+      </ThemeProvider>
+    </I18nextProvider>
   );
 }
