@@ -5,7 +5,6 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -86,7 +85,7 @@ export default function CodeInput({ onSubmit, loading = false }: CodeInputProps)
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
     >
-      <ScrollView style={styles.card}>
+      <View style={styles.card}>
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.iconContainer}>
@@ -189,7 +188,7 @@ export default function CodeInput({ onSubmit, loading = false }: CodeInputProps)
             de santé et aux alertes de votre proche
           </Text>
         </View>
-      </ScrollView>
+      </View>
     </KeyboardAvoidingView>
   );
 }

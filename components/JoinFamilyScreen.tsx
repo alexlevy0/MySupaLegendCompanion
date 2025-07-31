@@ -1,15 +1,15 @@
+import { joinFamilyWithCode } from "@/utils/SupaLegend";
+import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
   Alert,
+  SafeAreaView,
+  StyleSheet,
+  Text,
   TouchableOpacity,
+  View,
 } from "react-native";
-import { joinFamilyWithCode } from "@/utils/SupaLegend";
 import CodeInput from "./CodeInput";
-import { Ionicons } from "@expo/vector-icons";
 
 interface JoinFamilyScreenProps {
   onSuccess?: (seniorInfo: any) => void;
@@ -70,7 +70,7 @@ export default function JoinFamilyScreen({
 
       {/* Content */}
       <View style={styles.content}>
-        <View style={styles.heroSection}>
+        {/* <View style={styles.heroSection}>
           <View style={styles.iconContainer}>
             <Ionicons name="people-circle" size={80} color="#4f46e5" />
           </View>
@@ -79,11 +79,11 @@ export default function JoinFamilyScreen({
             Entrez le code partagé par votre proche pour accéder à ses informations
             de santé et recevoir des alertes importantes.
           </Text>
-        </View>
+        </View> */}
 
         <CodeInput onSubmit={handleJoinFamily} loading={loading} />
 
-        <View style={styles.helpSection}>
+        {/* <View style={styles.helpSection}>
           <Text style={styles.helpTitle}>💡 Comment obtenir un code ?</Text>
           <Text style={styles.helpText}>
             Demandez à un membre de la famille déjà inscrit de vous partager le
@@ -104,7 +104,7 @@ export default function JoinFamilyScreen({
               <Text style={styles.featureText}>Suivi de santé</Text>
             </View>
           </View>
-        </View>
+        </View> */}
       </View>
     </SafeAreaView>
   );
