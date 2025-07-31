@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
-import Button from '../Button';
+import { Button } from '../Button';
 
 describe('Button - Tests qui passent', () => {
   it('should render button with title', () => {

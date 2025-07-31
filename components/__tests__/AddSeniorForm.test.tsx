@@ -5,6 +5,9 @@ import AddSeniorForm from '../AddSeniorForm';
 
 jest.mock('@/utils/SupaLegend', () => ({
   createSenior: jest.fn(),
+  useMyCompanionAuth: jest.fn(() => ({
+    userProfile: { id: 'test-id' },
+  })),
 }));
 
 describe('AddSeniorForm - Tests qui passent', () => {

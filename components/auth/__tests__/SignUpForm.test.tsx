@@ -3,9 +3,28 @@ import { render, fireEvent } from '@testing-library/react-native';
 import { Alert } from 'react-native';
 import SignUpForm from '../SignUpForm';
 
-jest.mock('@/utils/auth', () => ({
+jest.mock('@/utils/SupaLegend', () => ({
   signUpMyCompanionUser: jest.fn(),
+  UserType: {
+    SENIOR: 'senior',
+    FAMILY: 'family',
+    SAAD: 'saad',
+  },
 }));
+
+jest.mock('expo-router', () => ({
+  router: {
+    replace: jest.fn(),
+  },
+}));
+
+jest.mock('@react-native-picker/picker', () => {
+  const React = require('react');
+  return {
+    Picker: ({ children }: any) => React.createElement('View', null, children),
+    PickerItem: () => null,
+  };
+});
 
 describe('SignUpForm - Tests qui passent', () => {
   beforeEach(() => {

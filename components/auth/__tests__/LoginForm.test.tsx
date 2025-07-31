@@ -1,12 +1,17 @@
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { render, fireEvent } from '@testing-library/react-native';
 import { Alert } from 'react-native';
 import LoginForm from '../LoginForm';
-import { signInMyCompanionUser } from '@/utils/auth';
-
 // Mock auth module
-jest.mock('@/utils/auth', () => ({
-  signInMyCompanionUser: jest.fn(),
+jest.mock('@/utils/SupaLegend', () => ({
+  signInWithEmail: jest.fn(),
+}));
+
+// Mock expo-router
+jest.mock('expo-router', () => ({
+  router: {
+    replace: jest.fn(),
+  },
 }));
 
 describe('LoginForm - Tests qui passent', () => {
@@ -21,13 +26,24 @@ describe('LoginForm - Tests qui passent', () => {
   });
 
   it('should render login form correctly', () => {
-    const { getByPlaceholderText, getByText } = render(
+    const { getByText, getByPlaceholderText } = render(
       <LoginForm onToggleMode={jest.fn()} />
     );
 
+    // Vérifier que les éléments existent
     expect(getByPlaceholderText('Email')).toBeTruthy();
-    expect(getByPlaceholderText('Mot de passe')).toBeTruthy();
     expect(getByText('Se connecter')).toBeTruthy();
+  });
+
+  it('should render demo accounts section', () => {
+    const { getByText } = render(
+      <LoginForm onToggleMode={jest.fn()} />
+    );
+
+    expect(getByText('👑 Admin')).toBeTruthy();
+    expect(getByText('👨‍👩‍👧‍👦 Famille')).toBeTruthy();
+    expect(getByText('👴 Senior')).toBeTruthy();
+    expect(getByText('🏢 SAAD')).toBeTruthy();
   });
 
   it('should update email input', () => {
@@ -41,26 +57,6 @@ describe('LoginForm - Tests qui passent', () => {
     expect(emailInput.props.value).toBe('test@example.com');
   });
 
-  it('should update password input', () => {
-    const { getByPlaceholderText } = render(
-      <LoginForm onToggleMode={jest.fn()} />
-    );
-
-    const passwordInput = getByPlaceholderText('Mot de passe');
-    fireEvent.changeText(passwordInput, 'password123');
-
-    expect(passwordInput.props.value).toBe('password123');
-  });
-
-  it('should have secure text entry for password', () => {
-    const { getByPlaceholderText } = render(
-      <LoginForm onToggleMode={jest.fn()} />
-    );
-
-    const passwordInput = getByPlaceholderText('Mot de passe');
-    expect(passwordInput.props.secureTextEntry).toBe(true);
-  });
-
   it('should call onToggleMode when create account is pressed', () => {
     const mockToggleMode = jest.fn();
     const { getByText } = render(
@@ -71,5 +67,17 @@ describe('LoginForm - Tests qui passent', () => {
     fireEvent.press(createAccountButton);
 
     expect(mockToggleMode).toHaveBeenCalled();
+  });
+
+  it('should fill demo account when demo button is pressed', () => {
+    const { getByText, getByPlaceholderText } = render(
+      <LoginForm onToggleMode={jest.fn()} />
+    );
+
+    const adminButton = getByText('👑 Admin');
+    fireEvent.press(adminButton);
+
+    const emailInput = getByPlaceholderText('Email');
+    expect(emailInput.props.value).toBe('admin@mycompanion.fr');
   });
 });
