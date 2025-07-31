@@ -17,7 +17,7 @@ describe('UserProfile', () => {
     email: 'test@example.com',
     name: 'Test User',
     phone: '0612345678',
-    role: 'family' as const,
+    user_type: 'family' as const,
     created_at: '2024-01-01T10:00:00Z',
   };
 
@@ -77,7 +77,14 @@ describe('UserProfile', () => {
     }
   });
 
-  it('should fetch and display user stats', async () => {
+  it('should fetch and display user stats for senior', async () => {
+    // Mock as senior to show stats
+    (useMyCompanionAuth as jest.Mock).mockReturnValue({
+      ...defaultAuthState,
+      userProfile: { ...mockUserProfile, user_type: 'senior' },
+      isSenior: true,
+    });
+    
     const { getByText } = render(<UserProfile />);
 
     await waitFor(() => {
