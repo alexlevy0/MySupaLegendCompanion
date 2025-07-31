@@ -16,6 +16,7 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
+import { useTranslation } from "@/hooks/useTranslation";
 
 // Type pour les alertes
 interface AlertData {
@@ -52,6 +53,7 @@ interface AlertData {
 const AlertsScreen = observer(() => {
   const { userProfile, isFamily, isSAAD, isAdmin } = useMyCompanionAuth();
   const [loading, setLoading] = useState(false);
+  const { t } = useTranslation();
 
   // Vérification des permissions
   if (!isFamily && !isSAAD && !isAdmin) {

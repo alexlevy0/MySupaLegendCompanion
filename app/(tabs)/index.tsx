@@ -13,6 +13,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useTranslation } from "@/hooks/useTranslation";
 
 const { width, height } = Dimensions.get('window');
 
@@ -20,6 +21,7 @@ export default function ProfileScreen() {
   const { userProfile, loading } = useMyCompanionAuth();
   const [isEditing, setIsEditing] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const { t } = useTranslation();
 
   React.useEffect(() => {
     if (!loading && userProfile) {
@@ -42,7 +44,7 @@ export default function ProfileScreen() {
         style={styles.loadingContainer}
       >
         <ActivityIndicator size="large" color="#ffffff" />
-        <Text style={styles.loadingText}>Chargement...</Text>
+        <Text style={styles.loadingText}>{t('common.loading')}</Text>
       </LinearGradient>
     );
   }
@@ -54,7 +56,7 @@ export default function ProfileScreen() {
         style={styles.errorContainer}
       >
         <Ionicons name="alert-circle-outline" size={64} color="#ffffff" />
-        <Text style={styles.errorText}>Erreur de chargement du profil</Text>
+        <Text style={styles.errorText}>{t('profile.loadingError')}</Text>
       </LinearGradient>
     );
   }
@@ -73,7 +75,7 @@ export default function ProfileScreen() {
             >
               <Ionicons name="arrow-back" size={24} color="#ffffff" />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Éditer le profil</Text>
+            <Text style={styles.headerTitle}>{t('profile.editProfile')}</Text>
             <View style={{ width: 40 }} />
           </View>
         </LinearGradient>
@@ -94,7 +96,7 @@ export default function ProfileScreen() {
             { opacity: fadeAnim }
           ]}
         >
-          <Text style={styles.title}>Mon Profil</Text>
+          <Text style={styles.title}>{t('profile.title')}</Text>
           <Text style={styles.subtitle}>
             {userProfile.first_name} {userProfile.last_name}
           </Text>
