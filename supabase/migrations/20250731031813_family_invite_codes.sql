@@ -172,8 +172,8 @@ WHERE status = 'pending';
 CREATE OR REPLACE VIEW active_family_codes AS
 SELECT 
   fic.*,
-  s.name as senior_name,
-  u.name as created_by_name,
+  CONCAT(s.first_name, ' ', s.last_name) as senior_name,
+  CONCAT(u.first_name, ' ', u.last_name) as created_by_name,
   (fic.max_uses - fic.current_uses) as remaining_uses,
   CASE 
     WHEN fic.expires_at < now() THEN 'expired'
