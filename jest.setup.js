@@ -110,10 +110,22 @@ jest.mock('@legendapp/state', () => ({
   synced: jest.fn(),
 }));
 
-// Mock Alert separately
-jest.mock('react-native/Libraries/Alert/Alert', () => ({
-  alert: jest.fn(),
-}));
+// Mock React Native modules
+jest.mock('react-native', () => {
+  const RN = jest.requireActual('react-native');
+  
+  // Override specific modules
+  RN.Alert = {
+    alert: jest.fn(),
+  };
+  
+  RN.Platform = {
+    ...RN.Platform,
+    select: jest.fn((obj) => obj.default || obj.ios),
+  };
+  
+  return RN;
+});
 
 // Global test utilities
 global.mockSupabaseAuth = (user = null, session = null) => {
