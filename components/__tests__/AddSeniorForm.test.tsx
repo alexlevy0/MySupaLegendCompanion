@@ -22,6 +22,12 @@ describe('AddSeniorForm', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    // Mock Alert.alert directement
+    if (Alert && !Alert.alert) {
+      Alert.alert = jest.fn();
+    } else if (Alert && Alert.alert && typeof Alert.alert !== 'function') {
+      Alert.alert = jest.fn();
+    }
     (useMyCompanionAuth as jest.Mock).mockReturnValue({
       userProfile: mockUserProfile,
     });

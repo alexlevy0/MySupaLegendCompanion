@@ -14,6 +14,12 @@ describe('LoginForm', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    // Mock Alert.alert directement
+    if (Alert && !Alert.alert) {
+      Alert.alert = jest.fn();
+    } else if (Alert && Alert.alert && typeof Alert.alert !== 'function') {
+      Alert.alert = jest.fn();
+    }
     // Alert is already mocked in jest.setup.js
   });
 

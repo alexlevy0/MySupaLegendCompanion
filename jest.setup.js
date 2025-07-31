@@ -116,8 +116,11 @@ jest.mock('react-native', () => {
   
   // Override specific modules
   RN.Alert = {
-    alert: jest.fn(),
+    alert: jest.fn(() => {}),
   };
+  
+  // Ensure Alert is globally available
+  global.Alert = RN.Alert;
   
   RN.Platform = {
     ...RN.Platform,
@@ -127,17 +130,7 @@ jest.mock('react-native', () => {
   return RN;
 });
 
-// Make Alert mock accessible globally
-global.Alert = {
-  alert: jest.fn(),
-};
 
-// Ensure React Native Alert is also mocked
-jest.doMock('react-native', () => {
-  const RN = jest.requireActual('react-native');
-  RN.Alert = global.Alert;
-  return RN;
-});
 
 // Global test utilities
 global.mockSupabaseAuth = (user = null, session = null) => {
