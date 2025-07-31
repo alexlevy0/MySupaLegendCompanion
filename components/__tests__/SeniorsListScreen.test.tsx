@@ -37,6 +37,9 @@ jest.mock('../FamilySharingScreen', () => {
 });
 
 describe('SeniorsListScreen', () => {
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
   const mockUserProfile = {
     id: 'user-123',
     email: 'test@example.com',
@@ -114,7 +117,11 @@ describe('SeniorsListScreen', () => {
   });
 
   it('should render loading state initially', () => {
-    (getUserSeniors as jest.Mock).mockReturnValue(new Promise(() => {}));
+    // Mock pour l'état de chargement initial
+    (getUserSeniors as jest.Mock).mockReturnValueOnce(new Promise(resolve => {
+      // Résoudre après un court délai pour permettre de tester l'état loading
+      setTimeout(() => resolve({ data: [], error: null }), 50);
+    }));
     
     const { getByTestId } = render(<SeniorsListScreen />);
     

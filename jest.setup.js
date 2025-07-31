@@ -132,6 +132,13 @@ global.Alert = {
   alert: jest.fn(),
 };
 
+// Ensure React Native Alert is also mocked
+jest.doMock('react-native', () => {
+  const RN = jest.requireActual('react-native');
+  RN.Alert = global.Alert;
+  return RN;
+});
+
 // Global test utilities
 global.mockSupabaseAuth = (user = null, session = null) => {
   const supabase = require('@supabase/supabase-js').createClient();
