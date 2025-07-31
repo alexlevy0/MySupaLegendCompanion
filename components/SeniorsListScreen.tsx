@@ -15,12 +15,14 @@ import {
 import AddSeniorForm from "@/components/AddSeniorForm";
 import EditSeniorForm from "@/components/EditSeniorForm";
 import FamilySharingScreen from "@/components/FamilySharingScreen";
+import JoinFamilyScreen from "@/components/JoinFamilyScreen";
 import {
   deleteSenior,
   getSeniorStats,
   getUserSeniors,
   useMyCompanionAuth,
 } from "@/utils/SupaLegend";
+import { Ionicons } from "@expo/vector-icons";
 
 interface Senior {
   id: string;
@@ -69,6 +71,7 @@ export default function SeniorsListScreen() {
   const [showAddSenior, setShowAddSenior] = useState(false);
   const [showEditSenior, setShowEditSenior] = useState(false);
   const [showFamilySharing, setShowFamilySharing] = useState(false);
+  const [showJoinFamily, setShowJoinFamily] = useState(false);
   const [selectedSenior, setSelectedSenior] = useState<Senior | null>(null);
 
   // États pour les statistiques
@@ -415,12 +418,22 @@ export default function SeniorsListScreen() {
           </Text>
         </View>
 
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() => setShowAddSenior(true)}
-        >
-          <Text style={styles.addButtonText}>+ Ajouter</Text>
-        </TouchableOpacity>
+        <View style={styles.headerButtons}>
+          <TouchableOpacity
+            style={styles.joinButton}
+            onPress={() => setShowJoinFamily(true)}
+          >
+            <Ionicons name="link-outline" size={20} color="#4f46e5" />
+            <Text style={styles.joinButtonText}>Code</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={() => setShowAddSenior(true)}
+          >
+            <Text style={styles.addButtonText}>+ Ajouter</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Liste des seniors */}
@@ -479,6 +492,44 @@ export default function SeniorsListScreen() {
           />
         )}
       </Modal>
+
+      {/* Modal - Rejoindre une famille */}
+      <Modal
+        visible={showJoinFamily}
+        animationType="slide"
+        presentationStyle="pageSheet"
+      >
+        <JoinFamilyScreen
+          onSuccess={(seniorInfo) => {
+            setShowJoinFamily(false);
+            loadSeniors(true); // Rafraîchir la liste
+            Alert.alert(
+              "✅ Succès",
+              `Vous avez rejoint la famille de ${seniorInfo.first_name} ${seniorInfo.last_name}`
+            );
+          }}
+          onBack={() => setShowJoinFamily(false)}
+        />
+      </Modal>
+
+      {/* Modal - Rejoindre une famille */}
+      <Modal
+        visible={showJoinFamily}
+        animationType="slide"
+        presentationStyle="pageSheet"
+      >
+        <JoinFamilyScreen
+          onSuccess={(seniorInfo) => {
+            setShowJoinFamily(false);
+            loadSeniors(true); // Rafraîchir la liste
+            Alert.alert(
+              "✅ Succès",
+              `Vous avez rejoint la famille de ${seniorInfo.first_name} ${seniorInfo.last_name}`
+            );
+          }}
+          onBack={() => setShowJoinFamily(false)}
+        />
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -520,6 +571,24 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: 14,
     color: "#64748b",
+  },
+  headerButtons: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  joinButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#ede9fe",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 8,
+    gap: 6,
+  },
+  joinButtonText: {
+    color: "#4f46e5",
+    fontSize: 15,
+    fontWeight: "600",
   },
   addButton: {
     backgroundColor: "#4f46e5",

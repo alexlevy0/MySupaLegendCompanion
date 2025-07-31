@@ -5,18 +5,338 @@ import { getRedirectUrl } from "../utils/url-helpers";
 import { createFamilyRelation } from "./senior-service";
 
 // =====================================================
-// SERVICE INVITATIONS FAMILIALES
+// SERVICE INVITATIONS FAMILIALES - CODES FAMILLE
 // =====================================================
 
-// ✅ Inviter un membre de famille
-export async function inviteFamilyMember(
-  inviteData: InviteFamilyMemberData
-): Promise<void> {
+// ✅ Générer un nouveau code famille
+export async function generateFamilyCode(seniorId: string): Promise<string> {
   try {
-    console.log("✉️ Inviting family member:", inviteData.email);
+    console.log("🔑 Generating family code for senior:", seniorId);
 
     // Vérifier que l'utilisateur actuel est connecté
     const currentUser = authState$.user.get();
+    if (!currentUser) {
+      throw new Error("User not authenticated");
+    }
+
+    // Vérifier que l'utilisateur a accès à ce senior
+    const { data: familyMember, error: memberError } = await supabase
+      .from("family_members")
+      .select("id")
+      .eq("user_id", currentUser.id)
+      .eq("senior_id", seniorId)
+      .eq("deleted", false)
+      .maybeSingle();
+
+    if (memberError || !familyMember) {
+      throw new Error("You don't have access to this senior");
+    }
+
+    // Désactiver l'ancien code s'il existe
+    await deactivateFamilyCode(seniorId);
+
+    // Générer un nouveau code via la fonction SQL
+    const { data: codeData, error: codeError } = await supabase
+      .rpc("generate_unique_family_code");
+
+    if (codeError || !codeData) {
+      throw new Error("Failed to generate code");
+    }
+
+    // Créer l'entrée dans la table
+    const { data: newCode, error: insertError } = await supabase
+      .from("family_invite_codes")
+      .insert({
+        senior_id: seniorId,
+        created_by: currentUser.id,
+        code: codeData,
+        is_active: true,
+      })
+      .select("code")
+      .single();
+
+    if (insertError) {
+      throw insertError;
+    }
+
+    console.log("✅ Family code generated:", newCode.code);
+    return newCode.code;
+  } catch (error) {
+    console.error("❌ Error generating family code:", error);
+    throw error;
+  }
+}
+
+// ✅ Valider et utiliser un code pour rejoindre une famille
+export async function joinFamilyWithCode(
+  code: string,
+  relationship: string,
+  notificationPreferences?: any
+): Promise<{ success: boolean; seniorInfo?: any; error?: string }> {
+  try {
+    console.log("🔗 Joining family with code:", code);
+
+    // Vérifier que l'utilisateur actuel est connecté
+    const currentUser = authState$.user.get();
+    if (!currentUser) {
+      throw new Error("User not authenticated");
+    }
+
+    // Nettoyer le code (uppercase, trim)
+    const cleanCode = code.trim().toUpperCase();
+
+    // Vérifier la validité du code
+    console.log("🔍 Searching for code:", cleanCode);
+    
+    const { data: codeData, error: codeError } = await supabase
+      .from("family_invite_codes")
+      .select("*")
+      .eq("code", cleanCode)
+      .maybeSingle();
+
+    if (codeError) {
+      console.error("❌ Error fetching code:", codeError);
+      return {
+        success: false,
+        error: "Erreur lors de la vérification du code",
+      };
+    }
+
+    if (!codeData) {
+      console.log("❌ Code not found:", cleanCode);
+      return {
+        success: false,
+        error: "Code invalide ou introuvable",
+      };
+    }
+
+    console.log("✅ Code found:", codeData);
+
+    // Vérifier si le code est actif
+    if (!codeData.is_active) {
+      return {
+        success: false,
+        error: "Ce code n'est plus actif",
+      };
+    }
+
+    // Vérifier l'expiration
+    if (new Date(codeData.expires_at) < new Date()) {
+      return {
+        success: false,
+        error: "Ce code a expiré",
+      };
+    }
+
+    // Vérifier le nombre d'utilisations
+    if (codeData.current_uses >= codeData.max_uses) {
+      return {
+        success: false,
+        error: "Ce code a atteint sa limite d'utilisation",
+      };
+    }
+
+    // Vérifier si l'utilisateur n'est pas déjà membre
+    const { data: existingRelation } = await supabase
+      .from("family_members")
+      .select("id")
+      .eq("user_id", currentUser.id)
+      .eq("senior_id", codeData.senior_id)
+      .eq("deleted", false)
+      .maybeSingle();
+
+    if (existingRelation) {
+      return {
+        success: false,
+        error: "Vous avez déjà accès à cette personne",
+      };
+    }
+
+    // Créer la relation familiale
+    await createFamilyRelation({
+      user_id: currentUser.id,
+      senior_id: codeData.senior_id,
+      relationship: relationship,
+      is_primary_contact: false,
+      notification_preferences: notificationPreferences || {
+        emergency_alerts: true,
+        daily_updates: true,
+        activity_reminders: false,
+      },
+      access_level: "standard",
+    });
+
+    // Récupérer les informations du senior
+    const { data: seniorData, error: seniorError } = await supabase
+      .from("seniors")
+      .select("id, first_name, last_name, phone")
+      .eq("id", codeData.senior_id)
+      .single();
+
+    if (seniorError || !seniorData) {
+      console.error("❌ Error fetching senior:", seniorError);
+      return {
+        success: false,
+        error: "Erreur lors de la récupération des informations",
+      };
+    }
+
+    // Enregistrer l'utilisation du code
+    await supabase.rpc("record_code_usage", {
+      p_code_id: codeData.id,
+      p_user_id: currentUser.id,
+      p_relationship: relationship,
+    });
+
+    console.log("✅ Successfully joined family");
+    return {
+      success: true,
+      seniorInfo: seniorData,
+    };
+  } catch (error) {
+    console.error("❌ Error joining family with code:", error);
+    return {
+      success: false,
+      error: "Une erreur est survenue",
+    };
+  }
+}
+
+// ✅ Régénérer un code (invalide l'ancien)
+export async function regenerateFamilyCode(seniorId: string): Promise<string> {
+  try {
+    console.log("🔄 Regenerating family code for senior:", seniorId);
+
+    // Désactiver l'ancien code
+    await deactivateFamilyCode(seniorId);
+
+    // Générer un nouveau code
+    return await generateFamilyCode(seniorId);
+  } catch (error) {
+    console.error("❌ Error regenerating family code:", error);
+    throw error;
+  }
+}
+
+// ✅ Récupérer le code actif d'un senior
+export async function getFamilyCode(seniorId: string): Promise<string | null> {
+  try {
+    console.log("📋 Getting family code for senior:", seniorId);
+
+    const { data: codeData, error } = await supabase
+      .from("family_invite_codes")
+      .select("code, expires_at, current_uses, max_uses")
+      .eq("senior_id", seniorId)
+      .eq("is_active", true)
+      .gte("expires_at", new Date().toISOString())
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    // Vérifier que le code n'a pas atteint sa limite d'utilisation
+    if (codeData && codeData.current_uses >= codeData.max_uses) {
+      return null;
+    }
+
+    return codeData?.code || null;
+  } catch (error) {
+    console.error("❌ Error getting family code:", error);
+    throw error;
+  }
+}
+
+// ✅ Désactiver un code
+export async function deactivateFamilyCode(seniorId: string): Promise<void> {
+  try {
+    console.log("🚫 Deactivating family codes for senior:", seniorId);
+
+    const { error } = await supabase
+      .from("family_invite_codes")
+      .update({ is_active: false, updated_at: new Date().toISOString() })
+      .eq("senior_id", seniorId)
+      .eq("is_active", true);
+
+    if (error) {
+      throw error;
+    }
+
+    console.log("✅ Family codes deactivated");
+  } catch (error) {
+    console.error("❌ Error deactivating family codes:", error);
+    throw error;
+  }
+}
+
+// ✅ Récupérer les statistiques d'un code
+export async function getCodeStatistics(seniorId: string): Promise<{
+  code: string | null;
+  expiresAt: Date | null;
+  currentUses: number;
+  maxUses: number;
+  remainingUses: number;
+  isActive: boolean;
+}> {
+  try {
+    const { data: codeData, error } = await supabase
+      .from("family_invite_codes")
+      .select("code, expires_at, current_uses, max_uses, is_active")
+      .eq("senior_id", seniorId)
+      .eq("is_active", true)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    if (!codeData) {
+      return {
+        code: null,
+        expiresAt: null,
+        currentUses: 0,
+        maxUses: 0,
+        remainingUses: 0,
+        isActive: false,
+      };
+    }
+
+    return {
+      code: codeData.code,
+      expiresAt: new Date(codeData.expires_at),
+      currentUses: codeData.current_uses,
+      maxUses: codeData.max_uses,
+      remainingUses: codeData.max_uses - codeData.current_uses,
+      isActive: codeData.is_active && new Date(codeData.expires_at) > new Date(),
+    };
+  } catch (error) {
+    console.error("❌ Error getting code statistics:", error);
+    throw error;
+  }
+}
+
+// =====================================================
+// ANCIENNES FONCTIONS (SYSTÈME EMAIL) - DEPRECATED
+// Ces fonctions sont conservées temporairement pour la compatibilité
+// mais ne doivent plus être utilisées
+// =====================================================
+
+// ⚠️ DEPRECATED - Utiliser generateFamilyCode() à la place
+export async function inviteFamilyMember(
+  inviteData: InviteFamilyMemberData
+): Promise<void> {
+  console.warn("⚠️ inviteFamilyMember is deprecated. Use generateFamilyCode() instead.");
+  throw new Error("Cette fonctionnalité a été remplacée par le système de codes famille.");
+}
+
+// L'ancien code d'invitation par email a été supprimé
+// Le reste du code ci-dessous sera également supprimé prochainement
+
+/*
     if (!currentUser) {
       throw new Error("User not authenticated");
     }
@@ -542,3 +862,4 @@ export async function getPendingInvitationsForEmail(email: string) {
     return [];
   }
 }
+*/
