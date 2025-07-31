@@ -7,7 +7,11 @@ import {
     Text,
     TouchableOpacity,
     View,
+    ScrollView,
+    Animated,
 } from "react-native";
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 
 interface UserStats {
   totalCalls: number;
@@ -21,12 +25,22 @@ export default function UserProfile() {
     totalCalls: 0,
     totalAlerts: 0,
   });
+  const scaleAnim = new Animated.Value(0.95);
 
   useEffect(() => {
     if (userProfile?.id) {
       getUserStats(userProfile.id).then(setStats);
     }
   }, [userProfile?.id]);
+
+  useEffect(() => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      friction: 8,
+      tension: 40,
+      useNativeDriver: true,
+    }).start();
+  }, []);
 
   const handleSignOut = async () => {
     if (Platform.OS === "web") {
@@ -56,19 +70,37 @@ export default function UserProfile() {
   const getUserTypeIcon = () => {
     switch (userProfile?.user_type) {
       case "admin":
-        return "👑";
+        return "shield-checkmark";
       case "senior":
-        return "👴";
+        return "person";
       case "family":
-        return "👨‍👩‍👧‍👦";
+        return "people";
       case "saad_admin":
-        return "🏢";
+        return "business";
       case "saad_worker":
-        return "👩‍⚕️";
+        return "medical";
       case "insurer":
-        return "🏛️";
+        return "briefcase";
       default:
-        return "👤";
+        return "person-circle";
+    }
+  };
+
+  const getUserTypeColor = () => {
+    switch (userProfile?.user_type) {
+      case "admin":
+        return ["#f59e0b", "#f97316"];
+      case "senior":
+        return ["#3b82f6", "#2563eb"];
+      case "family":
+        return ["#8b5cf6", "#7c3aed"];
+      case "saad_admin":
+      case "saad_worker":
+        return ["#10b981", "#059669"];
+      case "insurer":
+        return ["#6366f1", "#4f46e5"];
+      default:
+        return ["#6b7280", "#4b5563"];
     }
   };
 
@@ -93,10 +125,10 @@ export default function UserProfile() {
 
   const getPermissions = () => {
     const permissions = [];
-    if (isAdmin) permissions.push("🔧 Administration complète");
-    if (isSenior) permissions.push("👴 Réception d'appels");
-    if (isFamily) permissions.push("📊 Rapports familiaux");
-    if (isSAAD) permissions.push("🏥 Gestion bénéficiaires");
+    if (isAdmin) permissions.push({ icon: "settings", text: "Administration complète" });
+    if (isSenior) permissions.push({ icon: "call", text: "Réception d'appels" });
+    if (isFamily) permissions.push({ icon: "stats-chart", text: "Rapports familiaux" });
+    if (isSAAD) permissions.push({ icon: "medical", text: "Gestion bénéficiaires" });
 
     return permissions;
   };
@@ -104,89 +136,143 @@ export default function UserProfile() {
   if (!userProfile) return null;
 
   return (
-    <View style={styles.container}>
-      <View style={styles.card}>
-        <View style={styles.header}>
-          <Text style={styles.icon}>{getUserTypeIcon()}</Text>
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <Animated.View style={[styles.content, { transform: [{ scale: scaleAnim }] }]}>
+        {/* Carte principale avec avatar */}
+        <View style={styles.mainCard}>
+          <LinearGradient
+            colors={getUserTypeColor()}
+            style={styles.avatarContainer}
+          >
+            <Ionicons name={getUserTypeIcon()} size={48} color="white" />
+          </LinearGradient>
+          
           <View style={styles.userInfo}>
             <Text style={styles.name}>
               {userProfile.first_name} {userProfile.last_name}
             </Text>
             <Text style={styles.email}>{userProfile.email}</Text>
-            <Text style={styles.userType}>{getUserTypeLabel()}</Text>
+            <View style={styles.badge}>
+              <Text style={styles.userType}>{getUserTypeLabel()}</Text>
+            </View>
+          </View>
+
+          <View style={styles.statusBadge}>
+            <View style={[styles.statusDot, { backgroundColor: userProfile.is_active ? '#10b981' : '#ef4444' }]} />
+            <Text style={styles.statusText}>
+              {userProfile.is_active ? "Actif" : "Inactif"}
+            </Text>
           </View>
         </View>
 
         {/* Statistiques pour les seniors */}
         {isSenior && (
-          <View style={styles.statsSection}>
-            <Text style={styles.statsTitle}>📊 Mes statistiques</Text>
-            <View style={styles.statsRow}>
-              <View style={styles.statItem}>
+          <View style={styles.statsGrid}>
+            <TouchableOpacity activeOpacity={0.8} style={styles.statCard}>
+              <LinearGradient
+                colors={['#3b82f6', '#2563eb']}
+                style={styles.statGradient}
+              >
+                <Ionicons name="call" size={32} color="white" />
                 <Text style={styles.statNumber}>{stats.totalCalls}</Text>
                 <Text style={styles.statLabel}>Appels reçus</Text>
-              </View>
-              <View style={styles.statItem}>
+              </LinearGradient>
+            </TouchableOpacity>
+            
+            <TouchableOpacity activeOpacity={0.8} style={styles.statCard}>
+              <LinearGradient
+                colors={['#f59e0b', '#f97316']}
+                style={styles.statGradient}
+              >
+                <Ionicons name="alert-circle" size={32} color="white" />
                 <Text style={styles.statNumber}>{stats.totalAlerts}</Text>
-                <Text style={styles.statLabel}>Alertes générées</Text>
-              </View>
-            </View>
+                <Text style={styles.statLabel}>Alertes</Text>
+              </LinearGradient>
+            </TouchableOpacity>
           </View>
         )}
 
-        <View style={styles.details}>
-          <View style={styles.row}>
-            <Text style={styles.label}>Status:</Text>
-            <Text style={[styles.value, styles.active]}>
-              {userProfile.is_active ? "✅ Actif" : "❌ Inactif"}
-            </Text>
-          </View>
-
-          <View style={styles.row}>
-            <Text style={styles.label}>Membre depuis:</Text>
-            <Text style={styles.value}>
-              {new Date(userProfile.created_at).toLocaleDateString("fr-FR")}
-            </Text>
+        {/* Informations détaillées */}
+        <View style={styles.detailsCard}>
+          <Text style={styles.sectionTitle}>Informations</Text>
+          
+          <View style={styles.detailRow}>
+            <View style={styles.detailIcon}>
+              <Ionicons name="calendar" size={20} color="#6366f1" />
+            </View>
+            <View style={styles.detailContent}>
+              <Text style={styles.detailLabel}>Membre depuis</Text>
+              <Text style={styles.detailValue}>
+                {new Date(userProfile.created_at).toLocaleDateString("fr-FR", {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                })}
+              </Text>
+            </View>
           </View>
 
           {userProfile.phone && (
-            <View style={styles.row}>
-              <Text style={styles.label}>Téléphone:</Text>
-              <Text style={styles.value}>{userProfile.phone}</Text>
+            <View style={styles.detailRow}>
+              <View style={styles.detailIcon}>
+                <Ionicons name="call" size={20} color="#6366f1" />
+              </View>
+              <View style={styles.detailContent}>
+                <Text style={styles.detailLabel}>Téléphone</Text>
+                <Text style={styles.detailValue}>{userProfile.phone}</Text>
+              </View>
             </View>
           )}
         </View>
 
-        <View style={styles.permissions}>
-          <Text style={styles.permissionsTitle}>🔐 Permissions:</Text>
+        {/* Permissions */}
+        <View style={styles.permissionsCard}>
+          <Text style={styles.sectionTitle}>Permissions</Text>
           {getPermissions().map((permission, index) => (
-            <Text key={index} style={styles.permission}>
-              {permission}
-            </Text>
+            <View key={index} style={styles.permissionRow}>
+              <View style={styles.permissionIcon}>
+                <Ionicons name={permission.icon as any} size={20} color="#8b5cf6" />
+              </View>
+              <Text style={styles.permissionText}>{permission.text}</Text>
+            </View>
           ))}
         </View>
 
-        <View style={styles.actions}>
-          <TouchableOpacity
-            style={styles.signOutButton}
-            onPress={handleSignOut}
+        {/* Bouton de déconnexion */}
+        <TouchableOpacity
+          style={styles.signOutButton}
+          onPress={handleSignOut}
+          activeOpacity={0.8}
+        >
+          <LinearGradient
+            colors={['#ef4444', '#dc2626']}
+            style={styles.signOutGradient}
           >
-            <Text style={styles.signOutText}>🚪 Se déconnecter</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </View>
+            <Ionicons name="log-out-outline" size={24} color="white" />
+            <Text style={styles.signOutText}>Se déconnecter</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+      </Animated.View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
+    flex: 1,
+    backgroundColor: "#f8fafc",
   },
-  card: {
-    backgroundColor: "white",
-    borderRadius: 16,
+  content: {
     padding: 20,
+    paddingBottom: 40,
+  },
+  mainCard: {
+    backgroundColor: "white",
+    borderRadius: 20,
+    padding: 24,
+    alignItems: "center",
+    marginBottom: 20,
+    elevation: 5,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -194,120 +280,195 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.1,
     shadowRadius: 8,
-    elevation: 5,
   },
-  header: {
-    flexDirection: "row",
+  avatarContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    justifyContent: "center",
     alignItems: "center",
-    marginBottom: 20,
-  },
-  icon: {
-    fontSize: 40,
-    marginRight: 16,
+    marginBottom: 16,
   },
   userInfo: {
-    flex: 1,
+    alignItems: "center",
+    marginBottom: 16,
   },
   name: {
-    fontSize: 22,
+    fontSize: 26,
     fontWeight: "bold",
-    color: "#1f2937",
+    color: "#1e293b",
     marginBottom: 4,
   },
   email: {
-    fontSize: 14,
-    color: "#6b7280",
-    marginBottom: 4,
+    fontSize: 16,
+    color: "#64748b",
+    marginBottom: 12,
+  },
+  badge: {
+    backgroundColor: "#f1f5f9",
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 20,
   },
   userType: {
     fontSize: 14,
-    color: "#4f46e5",
+    color: "#475569",
     fontWeight: "600",
   },
-  statsSection: {
-    backgroundColor: "#f8fafc",
-    padding: 16,
-    borderRadius: 12,
+  statusBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    position: "absolute",
+    top: 20,
+    right: 20,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 6,
+  },
+  statusText: {
+    fontSize: 12,
+    color: "#64748b",
+    fontWeight: "500",
+  },
+  statsGrid: {
+    flexDirection: "row",
+    gap: 12,
     marginBottom: 20,
   },
-  statsTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#374151",
-    marginBottom: 12,
+  statCard: {
+    flex: 1,
+    borderRadius: 16,
+    overflow: "hidden",
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
   },
-  statsRow: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-  },
-  statItem: {
+  statGradient: {
+    padding: 20,
     alignItems: "center",
   },
   statNumber: {
-    fontSize: 24,
+    fontSize: 32,
     fontWeight: "bold",
-    color: "#4f46e5",
+    color: "white",
+    marginVertical: 8,
   },
   statLabel: {
-    fontSize: 12,
-    color: "#6b7280",
-    marginTop: 4,
+    fontSize: 14,
+    color: "rgba(255, 255, 255, 0.9)",
   },
-  details: {
+  detailsCard: {
+    backgroundColor: "white",
+    borderRadius: 16,
+    padding: 20,
     marginBottom: 20,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
-  row: {
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#1e293b",
+    marginBottom: 16,
+  },
+  detailRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 8,
+    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#f3f4f6",
+    borderBottomColor: "#f1f5f9",
   },
-  label: {
-    fontSize: 14,
-    color: "#6b7280",
-    fontWeight: "500",
-  },
-  value: {
-    fontSize: 14,
-    color: "#1f2937",
-    fontWeight: "600",
-  },
-  active: {
-    color: "#10b981",
-  },
-  permissions: {
-    backgroundColor: "#f8fafc",
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 20,
-  },
-  permissionsTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#374151",
-    marginBottom: 8,
-  },
-  permission: {
-    fontSize: 14,
-    color: "#4b5563",
-    marginBottom: 4,
-  },
-  actions: {
-    flexDirection: "row",
+  detailIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#f0f4ff",
     justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  detailContent: {
+    flex: 1,
+  },
+  detailLabel: {
+    fontSize: 12,
+    color: "#64748b",
+    marginBottom: 2,
+  },
+  detailValue: {
+    fontSize: 16,
+    color: "#1e293b",
+    fontWeight: "600",
+  },
+  permissionsCard: {
+    backgroundColor: "white",
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 24,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  permissionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
+  },
+  permissionIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#f5f3ff",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  permissionText: {
+    fontSize: 15,
+    color: "#475569",
+    flex: 1,
   },
   signOutButton: {
-    backgroundColor: "#ef4444",
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 16,
+    overflow: "hidden",
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  signOutGradient: {
+    flexDirection: "row",
     alignItems: "center",
-    flex: 1,
+    justifyContent: "center",
+    padding: 18,
   },
   signOutText: {
     color: "white",
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 18,
+    fontWeight: "700",
+    marginLeft: 8,
   },
 });
