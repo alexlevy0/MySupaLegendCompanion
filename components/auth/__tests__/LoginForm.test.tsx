@@ -31,7 +31,7 @@ describe('LoginForm - Tests qui passent', () => {
     );
 
     // Vérifier que les éléments existent
-    expect(getByPlaceholderText('Email')).toBeTruthy();
+    expect(getByPlaceholderText('votre@email.com')).toBeTruthy();
     expect(getByText('Se connecter')).toBeTruthy();
   });
 
@@ -51,7 +51,7 @@ describe('LoginForm - Tests qui passent', () => {
       <LoginForm onToggleMode={jest.fn()} />
     );
 
-    const emailInput = getByPlaceholderText('Email');
+    const emailInput = getByPlaceholderText('votre@email.com');
     fireEvent.changeText(emailInput, 'test@example.com');
 
     expect(emailInput.props.value).toBe('test@example.com');
@@ -77,7 +77,7 @@ describe('LoginForm - Tests qui passent', () => {
     const adminButton = getByText('👑 Admin');
     fireEvent.press(adminButton);
 
-    const emailInput = getByPlaceholderText('Email');
+    const emailInput = getByPlaceholderText('votre@email.com');
     expect(emailInput.props.value).toBe('admin@mycompanion.fr');
   });
 });

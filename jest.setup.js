@@ -130,7 +130,25 @@ jest.mock('react-native', () => {
   return RN;
 });
 
+// Mock @react-native-picker/picker
+jest.mock('@react-native-picker/picker', () => {
+  const React = require('react');
+  const View = require('react-native').View;
+  return {
+    Picker: React.forwardRef((props, ref) => 
+      React.createElement(View, { ...props, ref })
+    ),
+    default: React.forwardRef((props, ref) => 
+      React.createElement(View, { ...props, ref })
+    ),
+  };
+});
 
+// Ajouter Picker.Item au mock global
+const PickerMock = jest.requireMock('@react-native-picker/picker');
+if (PickerMock && PickerMock.Picker) {
+  PickerMock.Picker.Item = ({ label, value }) => null;
+}
 
 // Global test utilities
 global.mockSupabaseAuth = (user = null, session = null) => {

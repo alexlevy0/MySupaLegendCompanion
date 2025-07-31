@@ -18,14 +18,6 @@ jest.mock('expo-router', () => ({
   },
 }));
 
-jest.mock('@react-native-picker/picker', () => {
-  const React = require('react');
-  return {
-    Picker: ({ children }: any) => React.createElement('View', null, children),
-    PickerItem: () => null,
-  };
-});
-
 describe('SignUpForm - Tests qui passent', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -42,21 +34,22 @@ describe('SignUpForm - Tests qui passent', () => {
       <SignUpForm onToggleMode={jest.fn()} />
     );
 
-    expect(getByPlaceholderText('Nom complet')).toBeTruthy();
-    expect(getByPlaceholderText('Email')).toBeTruthy();
-    expect(getByPlaceholderText('Mot de passe (min. 6 caractères)')).toBeTruthy();
-    expect(getByText("S'inscrire")).toBeTruthy();
+    expect(getByPlaceholderText('Jean')).toBeTruthy();
+    expect(getByPlaceholderText('Dupont')).toBeTruthy();
+    expect(getByPlaceholderText('votre@email.com')).toBeTruthy();
+    expect(getByPlaceholderText('••••••••')).toBeTruthy();
+    expect(getByText('Créer le compte')).toBeTruthy();
   });
 
-  it('should update name input', () => {
+  it('should update first name input', () => {
     const { getByPlaceholderText } = render(
       <SignUpForm onToggleMode={jest.fn()} />
     );
 
-    const nameInput = getByPlaceholderText('Nom complet');
-    fireEvent.changeText(nameInput, 'John Doe');
+    const firstNameInput = getByPlaceholderText('Jean');
+    fireEvent.changeText(firstNameInput, 'Marie');
 
-    expect(nameInput.props.value).toBe('John Doe');
+    expect(firstNameInput.props.value).toBe('Marie');
   });
 
   it('should update email input', () => {
@@ -64,7 +57,7 @@ describe('SignUpForm - Tests qui passent', () => {
       <SignUpForm onToggleMode={jest.fn()} />
     );
 
-    const emailInput = getByPlaceholderText('Email');
+    const emailInput = getByPlaceholderText('votre@email.com');
     fireEvent.changeText(emailInput, 'john@example.com');
 
     expect(emailInput.props.value).toBe('john@example.com');
@@ -75,17 +68,17 @@ describe('SignUpForm - Tests qui passent', () => {
       <SignUpForm onToggleMode={jest.fn()} />
     );
 
-    const emailInput = getByPlaceholderText('Email');
+    const emailInput = getByPlaceholderText('votre@email.com');
     expect(emailInput.props.keyboardType).toBe('email-address');
   });
 
-  it('should call onToggleMode when "Se connecter" is pressed', () => {
+  it('should call onToggleMode when "J\'ai déjà un compte" is pressed', () => {
     const mockToggleMode = jest.fn();
     const { getByText } = render(
       <SignUpForm onToggleMode={mockToggleMode} />
     );
 
-    const loginButton = getByText('Se connecter');
+    const loginButton = getByText('J\'ai déjà un compte');
     fireEvent.press(loginButton);
 
     expect(mockToggleMode).toHaveBeenCalled();

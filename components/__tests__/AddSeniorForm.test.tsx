@@ -26,20 +26,32 @@ describe('AddSeniorForm - Tests qui passent', () => {
       <AddSeniorForm onSuccess={jest.fn()} onCancel={jest.fn()} />
     );
 
-    expect(getByPlaceholderText('Nom complet')).toBeTruthy();
-    expect(getByPlaceholderText('Téléphone')).toBeTruthy();
-    expect(getByText('Ajouter le senior')).toBeTruthy();
+    expect(getByPlaceholderText('Suzanne')).toBeTruthy();
+    expect(getByPlaceholderText('Dupont')).toBeTruthy();
+    expect(getByPlaceholderText('06 12 34 56 78')).toBeTruthy();
+    expect(getByText('Suivant →')).toBeTruthy();
   });
 
-  it('should update name input', () => {
+  it('should update first name input', () => {
     const { getByPlaceholderText } = render(
       <AddSeniorForm onSuccess={jest.fn()} onCancel={jest.fn()} />
     );
 
-    const nameInput = getByPlaceholderText('Nom complet');
-    fireEvent.changeText(nameInput, 'Jean Dupont');
+    const firstNameInput = getByPlaceholderText('Suzanne');
+    fireEvent.changeText(firstNameInput, 'Marie');
 
-    expect(nameInput.props.value).toBe('Jean Dupont');
+    expect(firstNameInput.props.value).toBe('Marie');
+  });
+
+  it('should update last name input', () => {
+    const { getByPlaceholderText } = render(
+      <AddSeniorForm onSuccess={jest.fn()} onCancel={jest.fn()} />
+    );
+
+    const lastNameInput = getByPlaceholderText('Dupont');
+    fireEvent.changeText(lastNameInput, 'Durand');
+
+    expect(lastNameInput.props.value).toBe('Durand');
   });
 
   it('should update phone input', () => {
@@ -47,7 +59,7 @@ describe('AddSeniorForm - Tests qui passent', () => {
       <AddSeniorForm onSuccess={jest.fn()} onCancel={jest.fn()} />
     );
 
-    const phoneInput = getByPlaceholderText('Téléphone');
+    const phoneInput = getByPlaceholderText('06 12 34 56 78');
     fireEvent.changeText(phoneInput, '0612345678');
 
     expect(phoneInput.props.value).toBe('0612345678');
@@ -58,7 +70,7 @@ describe('AddSeniorForm - Tests qui passent', () => {
       <AddSeniorForm onSuccess={jest.fn()} onCancel={jest.fn()} />
     );
 
-    const phoneInput = getByPlaceholderText('Téléphone');
+    const phoneInput = getByPlaceholderText('06 12 34 56 78');
     expect(phoneInput.props.keyboardType).toBe('phone-pad');
   });
 
