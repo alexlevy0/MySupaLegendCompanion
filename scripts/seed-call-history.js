@@ -61,20 +61,53 @@ async function seedCallHistory() {
         // Score de qualité aléatoire (entre 60 et 100)
         const qualityScore = status === 'completed' ? Math.floor(Math.random() * 40) + 60 : null;
         
-        // Résumé de conversation
-        const summaries = [
-          `${senior.first_name} était de bonne humeur aujourd'hui. Nous avons parlé de sa famille et de ses activités.`,
-          `Discussion sur les souvenirs d'enfance de ${senior.first_name}. Très nostalgique mais heureux.`,
-          `${senior.first_name} a mentionné quelques douleurs mais reste optimiste. A parlé de son jardin.`,
-          `Conversation animée sur les actualités. ${senior.first_name} suit toujours l'actualité avec intérêt.`,
-          `${senior.first_name} était un peu fatigué(e) mais content(e) de discuter. A évoqué ses projets pour la semaine.`,
-          null
-        ];
+        // Résumé de conversation adapté au type d'appel
+        let summaries;
+        if (callType === 'emergency') {
+          summaries = [
+            `${senior.first_name} a appelé car il/elle ne se sentait pas bien. Situation résolue, rassurance apportée.`,
+            `Appel d'urgence suite à une chute. ${senior.first_name} va bien, famille prévenue.`,
+            `${senior.first_name} était anxieux(se) et avait besoin de parler. Situation calmée après discussion.`,
+            `Problème technique avec l'équipement médical. Support technique contacté et problème résolu.`,
+          ];
+        } else if (callType === 'followup') {
+          summaries = [
+            `Suivi après la visite médicale de la semaine dernière. ${senior.first_name} suit bien les recommandations.`,
+            `Appel de suivi concernant les nouveaux médicaments. Pas d'effets secondaires signalés.`,
+            `Vérification du moral après l'hospitalisation. ${senior.first_name} récupère bien.`,
+            `Suivi de l'état général. Amélioration notable depuis le dernier appel.`,
+          ];
+        } else {
+          summaries = [
+            `${senior.first_name} était de bonne humeur aujourd'hui. Nous avons parlé de sa famille et de ses activités.`,
+            `Discussion sur les souvenirs d'enfance de ${senior.first_name}. Très nostalgique mais heureux.`,
+            `${senior.first_name} a mentionné quelques douleurs mais reste optimiste. A parlé de son jardin.`,
+            `Conversation animée sur les actualités. ${senior.first_name} suit toujours l'actualité avec intérêt.`,
+            `${senior.first_name} était un peu fatigué(e) mais content(e) de discuter. A évoqué ses projets pour la semaine.`,
+          ];
+        }
+        
+        // Ajouter null occasionnellement pour plus de réalisme
+        if (Math.random() < 0.2) {
+          summaries.push(null);
+        }
+        
         const summary = status === 'completed' ? summaries[Math.floor(Math.random() * summaries.length)] : null;
+        
+        // Type d'appel avec probabilités réalistes
+        const callTypeRandom = Math.random();
+        let callType;
+        if (callTypeRandom < 0.7) {
+          callType = 'scheduled'; // 70% d'appels programmés
+        } else if (callTypeRandom < 0.9) {
+          callType = 'followup'; // 20% d'appels de suivi
+        } else {
+          callType = 'emergency'; // 10% d'appels d'urgence
+        }
         
         const call = {
           senior_id: senior.id,
-          call_type: 'regular',
+          call_type: callType,
           status: status,
           started_at: status !== 'scheduled' || i < numCalls - 2 ? callDate.toISOString() : null,
           ended_at: status === 'completed' ? endDate.toISOString() : null,

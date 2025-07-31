@@ -17,6 +17,10 @@ Pour chaque appel, les informations suivantes sont disponibles :
 
 ### Informations de base
 - **Date et heure** de l'appel
+- **Type d'appel** avec icône :
+  - 📅 Programmé : Appel régulier planifié
+  - 🚨 Urgence : Appel d'urgence
+  - 🔄 Suivi : Appel de suivi médical ou autre
 - **Statut** : Terminé ✅, Manqué ❌, Programmé 🕒, En cours 📞
 - **Durée** de l'appel (format: Xm Ys)
 
@@ -55,10 +59,14 @@ npm run seed:calls
 
 Cette commande génère entre 5 et 10 appels aléatoires pour chaque senior existant, avec :
 - Des dates réparties sur les 30 derniers jours
+- Des types d'appels avec probabilités réalistes :
+  - 70% d'appels programmés (réguliers)
+  - 20% d'appels de suivi
+  - 10% d'appels d'urgence
 - Des statuts variés (complété, manqué, programmé)
 - Des durées entre 2 et 20 minutes
 - Des humeurs et scores de qualité aléatoires
-- Des résumés de conversation réalistes
+- Des résumés de conversation adaptés au type d'appel
 
 ## Architecture technique
 

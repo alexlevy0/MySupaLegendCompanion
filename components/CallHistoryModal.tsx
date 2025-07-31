@@ -70,6 +70,32 @@ export const CallHistoryModal: React.FC<CallHistoryModalProps> = ({
     }
   };
 
+  const getCallTypeIcon = (callType: string | null) => {
+    switch (callType) {
+      case 'scheduled':
+        return '📅';
+      case 'emergency':
+        return '🚨';
+      case 'followup':
+        return '🔄';
+      default:
+        return '📞';
+    }
+  };
+
+  const getCallTypeText = (callType: string | null) => {
+    switch (callType) {
+      case 'scheduled':
+        return 'Programmé';
+      case 'emergency':
+        return 'Urgence';
+      case 'followup':
+        return 'Suivi';
+      default:
+        return 'Appel';
+    }
+  };
+
   const getStatusText = (status: string) => {
     switch (status) {
       case 'completed':
@@ -129,6 +155,14 @@ export const CallHistoryModal: React.FC<CallHistoryModalProps> = ({
             </View>
           </View>
           <View style={styles.callHeaderRight}>
+            <View style={styles.callTypeContainer}>
+              <ThemedText style={styles.callTypeIcon}>
+                {getCallTypeIcon(item.call_type)}
+              </ThemedText>
+              <ThemedText style={styles.callType}>
+                {getCallTypeText(item.call_type)}
+              </ThemedText>
+            </View>
             <ThemedText style={styles.callStatus}>
               {getStatusText(item.status)}
             </ThemedText>
@@ -304,6 +338,20 @@ const styles = StyleSheet.create({
   },
   callHeaderRight: {
     alignItems: 'flex-end',
+  },
+  callTypeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  callTypeIcon: {
+    fontSize: 14,
+    marginRight: 4,
+  },
+  callType: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#666',
   },
   statusIcon: {
     fontSize: 24,
