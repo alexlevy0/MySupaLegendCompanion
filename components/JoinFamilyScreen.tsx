@@ -2,13 +2,13 @@ import { joinFamilyWithCode } from "@/utils/SupaLegend";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import {
-  Alert,
   SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import Alert from "@/utils/Alert";
 import CodeInput from "./CodeInput";
 
 interface JoinFamilyScreenProps {

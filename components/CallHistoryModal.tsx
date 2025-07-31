@@ -3,7 +3,6 @@ import { fr } from 'date-fns/locale';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   Modal,
   SafeAreaView,
@@ -11,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import Alert from '@/utils/Alert';
 import { getSeniorCalls } from '../utils/supabase/services/call-service';
 import { Call, Senior } from '../utils/supabase/types';
 import { ThemedText } from './ThemedText';

@@ -3,7 +3,6 @@ import { Picker } from "@react-native-picker/picker";
 import React, { useEffect, useState } from "react";
 import {
     ActivityIndicator,
-    Alert,
     Platform,
     ScrollView,
     StyleSheet,
@@ -14,6 +13,7 @@ import {
     KeyboardAvoidingView,
     Dimensions,
 } from "react-native";
+import Alert from "@/utils/Alert";
 import Animated, {
     FadeInDown,
     FadeInUp,

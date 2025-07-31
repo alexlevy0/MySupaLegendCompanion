@@ -7,11 +7,11 @@ import {
   Animated,
   Share,
   Platform,
-  Alert,
   ActivityIndicator,
 } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { Ionicons } from "@expo/vector-icons";
+import Alert from "@/utils/Alert";
 
 interface CodeCardProps {
   code: string | null;

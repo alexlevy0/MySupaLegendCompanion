@@ -11,7 +11,6 @@ import { Picker } from "@react-native-picker/picker";
 import React, { useEffect, useState } from "react";
 import {
     ActivityIndicator,
-    Alert,
     ScrollView,
     StyleSheet,
     Switch,
@@ -20,6 +19,7 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
+import Alert from "@/utils/Alert";
 
 interface ProfileEditProps {
   onClose?: () => void;

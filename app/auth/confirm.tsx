@@ -4,12 +4,12 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
     ActivityIndicator,
-    Alert,
     StyleSheet,
     Text,
     TouchableOpacity,
     View,
 } from "react-native";
+import Alert from "@/utils/Alert";
 
 export default function AuthConfirm() {
   const router = useRouter();

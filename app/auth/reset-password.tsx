@@ -4,7 +4,6 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
     ActivityIndicator,
-    Alert,
     KeyboardAvoidingView,
     Platform,
     StyleSheet,
@@ -13,6 +12,7 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
+import Alert from "@/utils/Alert";
 
 export default function ResetPassword() {
   const router = useRouter();

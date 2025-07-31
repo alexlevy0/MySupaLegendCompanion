@@ -2,7 +2,6 @@ import { deleteSenior, getSeniorStats } from "@/utils/SupaLegend";
 import React, { useEffect, useState } from "react";
 import {
     ActivityIndicator,
-    Alert,
     RefreshControl,
     SafeAreaView,
     ScrollView,
@@ -11,6 +10,7 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
+import Alert from "@/utils/Alert";
 import SeniorDetailsModal from "./SeniorDetailsModal";
 
 interface SeniorDetailProps {

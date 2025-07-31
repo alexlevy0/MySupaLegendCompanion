@@ -8,7 +8,6 @@ import {
 import React, { useEffect, useState } from "react";
 import {
     ActivityIndicator,
-    Alert,
     ScrollView,
     StyleSheet,
     Text,
@@ -16,6 +15,7 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
+import Alert from "@/utils/Alert";
 
 interface EditSeniorFormProps {
   seniorId: string;

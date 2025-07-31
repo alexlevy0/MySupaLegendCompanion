@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
-import { Alert, Platform } from 'react-native';
+import { Platform } from 'react-native';
+import Alert from '@/utils/Alert';
 import UserProfile from '../UserProfile';
 import { getUserStats, signOut, useMyCompanionAuth } from '@/utils/SupaLegend';
 

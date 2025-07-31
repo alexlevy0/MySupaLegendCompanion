@@ -2,7 +2,6 @@ import { signInWithEmail } from "@/utils/SupaLegend";
 import React, { useEffect, useState } from "react";
 import {
     ActivityIndicator,
-    Alert,
     Keyboard,
     KeyboardAvoidingView,
     Platform,
@@ -15,6 +14,7 @@ import {
     TouchableWithoutFeedback,
     View,
 } from "react-native";
+import Alert from "@/utils/Alert";
 import Animated, {
     FadeIn,
     FadeInDown,

@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
-import { Alert } from 'react-native';
+import Alert from '@/utils/Alert';
 import LoginForm from '../LoginForm';
 // Mock auth module
 jest.mock('@/utils/SupaLegend', () => ({
