@@ -12,6 +12,7 @@ import { useEffect } from "react";
 
 import AuthWrapper from "@/components/auth/AuthWrapper";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { I18nProvider } from "@/contexts/I18nContext";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -33,14 +34,16 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <AuthWrapper>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="+not-found" />
-        </Stack>
-      </AuthWrapper>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <I18nProvider>
+      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+        <AuthWrapper>
+          <Stack>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="+not-found" />
+          </Stack>
+        </AuthWrapper>
+        <StatusBar style="auto" />
+      </ThemeProvider>
+    </I18nProvider>
   );
 }

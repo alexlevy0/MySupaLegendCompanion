@@ -9,10 +9,12 @@ import TabBarBackground from "@/components/ui/TabBarBackground";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useMyCompanionAuth } from "@/utils/SupaLegend";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const { isFamily, isSAAD, isAdmin, isSenior, loading } = useMyCompanionAuth();
+  const { t } = useTranslation();
 
   // Déterminer quels tabs afficher selon le type d'utilisateur
   const shouldShowSeniors = isFamily || isSAAD || isAdmin;
@@ -39,7 +41,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Profile",
+          title: t('tabs.profile'),
           tabBarIcon: ({ color }) => (
             <IconSymbol size={28} name="house.fill" color={color} />
           ),
@@ -50,7 +52,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="seniors"
         options={{
-          title: "Seniors",
+          title: t('tabs.seniors'),
           tabBarIcon: ({ color }) => (
             <IconSymbol size={28} name="person.2.fill" color={color} />
           ),
@@ -65,7 +67,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="dashboard"
         options={{
-          title: "Dashboard",
+          title: t('tabs.dashboard'),
           tabBarIcon: ({ color }) => (
             <IconSymbol size={28} name="chart.bar.fill" color={color} />
           ),
@@ -77,7 +79,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="alerts"
         options={{
-          title: "Alertes",
+          title: t('tabs.alerts'),
           tabBarIcon: ({ color }) => (
             <IconSymbol size={28} name="bell.fill" color={color} />
           ),
@@ -89,7 +91,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="admin"
         options={{
-          title: "Admin",
+          title: t('tabs.admin'),
           tabBarIcon: ({ color }) => (
             <IconSymbol size={28} name="crown.fill" color={color} />
           ),
@@ -100,7 +102,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: "Profil",
+          title: t('tabs.profile'),
           tabBarIcon: ({ color }) => (
             <IconSymbol size={28} name="person.fill" color={color} />
           ),
