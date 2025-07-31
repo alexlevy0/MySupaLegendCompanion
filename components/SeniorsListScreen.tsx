@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   Modal,
   SafeAreaView,
@@ -11,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import Alert from "@/utils/Alert";
 
 import AddSeniorForm from "@/components/AddSeniorForm";
 import EditSeniorForm from "@/components/EditSeniorForm";

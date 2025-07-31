@@ -8,7 +8,6 @@ import { observer } from "@legendapp/state/react";
 import React, { useState } from "react";
 import {
     ActivityIndicator,
-    Alert,
     FlatList,
     SafeAreaView,
     StyleSheet,
@@ -16,6 +15,7 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
+import Alert from "@/utils/Alert";
 
 // Type pour les alertes
 interface AlertData {

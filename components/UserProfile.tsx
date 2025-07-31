@@ -1,7 +1,6 @@
 import { getUserStats, signOut, useMyCompanionAuth } from "@/utils/SupaLegend";
 import React, { useEffect, useState } from "react";
 import {
-    Alert,
     Platform,
     StyleSheet,
     Text,
@@ -10,6 +9,7 @@ import {
     ScrollView,
     Animated,
 } from "react-native";
+import Alert from "@/utils/Alert";
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 

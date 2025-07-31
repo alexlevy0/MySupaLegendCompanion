@@ -10,7 +10,6 @@ import {
 import React, { useEffect, useState } from "react";
 import {
     ActivityIndicator,
-    Alert,
     FlatList,
     SafeAreaView,
     ScrollView,
@@ -19,6 +18,7 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
+import Alert from "@/utils/Alert";
 import CodeCard from "./CodeCard";
 import CodeInput from "./CodeInput";
 import { Ionicons } from "@expo/vector-icons";

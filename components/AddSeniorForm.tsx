@@ -2,7 +2,6 @@ import { addSenior, createFamilyRelation, useMyCompanionAuth } from "@/utils/Sup
 import React, { useState } from "react";
 import {
     ActivityIndicator,
-    Alert,
     ScrollView,
     StyleSheet,
     Switch,
@@ -11,6 +10,7 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
+import Alert from "@/utils/Alert";
 
 interface AddSeniorFormProps {
   onSuccess?: (seniorId: string) => void;
