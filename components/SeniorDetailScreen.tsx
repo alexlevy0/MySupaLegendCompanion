@@ -11,6 +11,7 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
+import SeniorDetailsModal from "./SeniorDetailsModal";
 
 interface SeniorDetailProps {
   senior: {
@@ -54,6 +55,7 @@ export default function SeniorDetailScreen({
   });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
 
   const seniorInfo = senior.seniors;
 
@@ -138,23 +140,11 @@ export default function SeniorDetailScreen({
   };
 
   const handleViewCalls = () => {
-    Alert.alert(
-      "📞 Historique des appels",
-      `${seniorInfo.first_name} a reçu ${stats.totalCalls} appels depuis le début.`,
-      [{ text: "OK" }]
-    );
-    // TODO: Naviguer vers l'historique des appels
+    setShowDetailsModal(true);
   };
 
   const handleViewAlerts = () => {
-    Alert.alert(
-      "🚨 Alertes",
-      stats.totalAlerts === 0
-        ? `Aucune alerte pour ${seniorInfo.first_name}. Tout va bien ! 😊`
-        : `${stats.totalAlerts} alertes ont été générées pour ${seniorInfo.first_name}.`,
-      [{ text: "OK" }]
-    );
-    // TODO: Naviguer vers les alertes
+    setShowDetailsModal(true);
   };
 
   const handleDeleteSenior = () => {
@@ -417,6 +407,14 @@ export default function SeniorDetailScreen({
           </>
         )}
       </ScrollView>
+
+      {/* Modal des détails */}
+      <SeniorDetailsModal
+        visible={showDetailsModal}
+        seniorId={seniorInfo.id}
+        seniorName={`${seniorInfo.first_name} ${seniorInfo.last_name}`}
+        onClose={() => setShowDetailsModal(false)}
+      />
     </SafeAreaView>
   );
 }
