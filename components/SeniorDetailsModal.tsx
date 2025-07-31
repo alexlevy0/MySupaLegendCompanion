@@ -8,6 +8,7 @@ import {
   View,
   ActivityIndicator,
   Platform,
+  SafeAreaView,
 } from 'react-native';
 import { getSeniorStats, getSeniorById } from '@/utils/SupaLegend';
 
@@ -215,11 +216,11 @@ export default function SeniorDetailsModal({
     <Modal
       visible={visible}
       animationType="slide"
-      transparent={true}
+      presentationStyle="fullScreen"
       onRequestClose={onClose}
     >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.content}>
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.headerLeft}>
@@ -254,33 +255,18 @@ export default function SeniorDetailsModal({
             )}
           </ScrollView>
         </View>
-      </View>
+      </SafeAreaView>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  modalOverlay: {
+  container: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
     backgroundColor: 'white',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: '90%',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: -3 },
-        shadowOpacity: 0.1,
-        shadowRadius: 12,
-      },
-      android: {
-        elevation: 20,
-      },
-    }),
+  },
+  content: {
+    flex: 1,
   },
   header: {
     flexDirection: 'row',
@@ -413,7 +399,6 @@ const styles = StyleSheet.create({
   progressFill: {
     height: '100%',
     borderRadius: 4,
-    transition: 'width 0.3s ease',
   },
   statsGrid: {
     flexDirection: 'row',

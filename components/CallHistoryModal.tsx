@@ -226,11 +226,11 @@ export const CallHistoryModal: React.FC<CallHistoryModalProps> = ({
     <Modal
       visible={visible}
       animationType="slide"
-      transparent={true}
+      presentationStyle="fullScreen"
       onRequestClose={onClose}
     >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
+      <SafeAreaView style={styles.fullScreenContainer}>
+        <View style={styles.fullScreenContent}>
           <View style={styles.modalHeader}>
             <ThemedText style={styles.modalTitle}>
               📞 Historique des appels

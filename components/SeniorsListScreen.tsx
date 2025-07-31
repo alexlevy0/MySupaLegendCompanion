@@ -465,7 +465,7 @@ export default function SeniorsListScreen() {
       <Modal
         visible={showAddSenior}
         animationType="slide"
-        presentationStyle="pageSheet"
+        presentationStyle="fullScreen"
       >
         <AddSeniorForm
           onSuccess={handleAddSeniorSuccess}
@@ -477,7 +477,7 @@ export default function SeniorsListScreen() {
       <Modal
         visible={showEditSenior}
         animationType="slide"
-        presentationStyle="pageSheet"
+        presentationStyle="fullScreen"
       >
         {selectedSenior && (
           <EditSeniorForm
@@ -492,7 +492,7 @@ export default function SeniorsListScreen() {
       <Modal
         visible={showFamilySharing}
         animationType="slide"
-        presentationStyle="pageSheet"
+        presentationStyle="fullScreen"
       >
         {selectedSenior && (
           <FamilySharingScreen
@@ -510,26 +510,7 @@ export default function SeniorsListScreen() {
       <Modal
         visible={showJoinFamily}
         animationType="slide"
-        presentationStyle="pageSheet"
-      >
-        <JoinFamilyScreen
-          onSuccess={(seniorInfo) => {
-            setShowJoinFamily(false);
-            loadSeniors(true); // Rafraîchir la liste
-            Alert.alert(
-              "✅ Succès",
-              `Vous avez rejoint la famille de ${seniorInfo.first_name} ${seniorInfo.last_name}`
-            );
-          }}
-          onBack={() => setShowJoinFamily(false)}
-        />
-      </Modal>
-
-      {/* Modal - Rejoindre une famille */}
-      <Modal
-        visible={showJoinFamily}
-        animationType="slide"
-        presentationStyle="pageSheet"
+        presentationStyle="fullScreen"
       >
         <JoinFamilyScreen
           onSuccess={(seniorInfo) => {
