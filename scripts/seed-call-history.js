@@ -61,6 +61,17 @@ async function seedCallHistory() {
         // Score de qualité aléatoire (entre 60 et 100)
         const qualityScore = status === 'completed' ? Math.floor(Math.random() * 40) + 60 : null;
         
+        // Type d'appel avec probabilités réalistes
+        const callTypeRandom = Math.random();
+        let callType;
+        if (callTypeRandom < 0.7) {
+          callType = 'scheduled'; // 70% d'appels programmés
+        } else if (callTypeRandom < 0.9) {
+          callType = 'followup'; // 20% d'appels de suivi
+        } else {
+          callType = 'emergency'; // 10% d'appels d'urgence
+        }
+        
         // Résumé de conversation adapté au type d'appel
         let summaries;
         if (callType === 'emergency') {
@@ -93,17 +104,6 @@ async function seedCallHistory() {
         }
         
         const summary = status === 'completed' ? summaries[Math.floor(Math.random() * summaries.length)] : null;
-        
-        // Type d'appel avec probabilités réalistes
-        const callTypeRandom = Math.random();
-        let callType;
-        if (callTypeRandom < 0.7) {
-          callType = 'scheduled'; // 70% d'appels programmés
-        } else if (callTypeRandom < 0.9) {
-          callType = 'followup'; // 20% d'appels de suivi
-        } else {
-          callType = 'emergency'; // 10% d'appels d'urgence
-        }
         
         const call = {
           senior_id: senior.id,
