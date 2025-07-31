@@ -38,7 +38,10 @@ export const CallHistoryModal: React.FC<CallHistoryModalProps> = ({
   const loadCalls = async () => {
     try {
       setLoading(true);
+      console.log('🔍 Loading calls for senior:', senior.id);
       const callsData = await getSeniorCalls(senior.id);
+      console.log('📞 Calls received:', callsData?.length || 0, 'calls');
+      console.log('📞 Calls data:', callsData);
       setCalls(callsData);
     } catch (error) {
       console.error('Erreur lors du chargement des appels:', error);

@@ -11,6 +11,10 @@ export async function getSeniorCalls(seniorId: string) {
   try {
     console.log("📞 Loading calls for senior:", seniorId);
 
+    // Vérifier l'utilisateur actuel
+    const { data: { user } } = await supabase.auth.getUser();
+    console.log("👤 Current user:", user?.id, user?.email);
+
     const { data, error } = await supabase
       .from("calls")
       .select("*")
@@ -18,7 +22,13 @@ export async function getSeniorCalls(seniorId: string) {
       .eq("deleted", false)
       .order("started_at", { ascending: false });
 
-    if (error) throw error;
+    console.log("📊 Query result - data:", data?.length || 0, "error:", error);
+    
+    if (error) {
+      console.error("❌ Supabase error details:", error.message, error.details, error.hint);
+      throw error;
+    }
+    
     return data || [];
   } catch (error) {
     console.error("❌ Failed to get senior calls:", error);
