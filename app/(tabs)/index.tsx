@@ -1,251 +1,117 @@
-import { observer } from "@legendapp/state/react";
-import { Image } from "expo-image";
-import { useState } from "react";
+import ProfileEdit from "@/components/ProfileEdit";
+import UserProfile from "@/components/UserProfile";
+import { useMyCompanionAuth } from "@/utils/SupaLegend";
+import React, { useState } from "react";
 import {
-  FlatList,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity
+    ActivityIndicator,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
-import { HelloWave } from "@/components/HelloWave";
-import ParallaxScrollView from "@/components/ParallaxScrollView";
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
-import UserProfile from "@/components/UserProfile";
+export default function ProfileScreen() {
+  const { userProfile, loading } = useMyCompanionAuth();
+  const [isEditing, setIsEditing] = useState(false);
 
-import { todos$ as _todos$, addTodo, toggleDone } from "@/utils/SupaLegend";
-import { Database } from "@/utils/database.types";
-
-type Todo = Database["public"]["Tables"]["todos"]["Row"];
-
-const NOT_DONE_ICON = String.fromCodePoint(0x1f7e0);
-const DONE_ICON = String.fromCodePoint(0x2705);
-
-const NewTodo = () => {
-  const [text, setText] = useState("");
-  const handleSubmitEditing = ({
-    nativeEvent: { text },
-  }: {
-    nativeEvent: { text: string };
-  }) => {
-    setText("");
-    addTodo(text);
-  };
-  return (
-    <TextInput
-      value={text}
-      onChangeText={(text) => setText(text)}
-      onSubmitEditing={handleSubmitEditing}
-      placeholder="What do you want to do today?"
-      style={styles.input}
-    />
-  );
-};
-
-const Todo = ({ todo }: { todo: Todo }) => {
-  const handlePress = () => {
-    toggleDone(todo.id);
-  };
-  return (
-    <TouchableOpacity
-      key={todo.id}
-      onPress={handlePress}
-      style={[styles.todo, todo.done ? styles.done : null]}
-    >
-      <Text style={styles.todoText}>
-        {todo.done ? DONE_ICON : NOT_DONE_ICON} {todo.text}
-      </Text>
-    </TouchableOpacity>
-  );
-};
-
-// A list component to show all the todos.
-const Todos = observer(({ todos$ }: { todos$: typeof _todos$ }) => {
-  // Get the todos from the state and subscribe to updates
-  const todos = todos$.get();
-  const renderItem = ({ item: todo }: { item: Todo }) => <Todo todo={todo} />;
-  if (todos)
+  if (loading) {
     return (
-      <FlatList
-        data={Object.values(todos)}
-        renderItem={renderItem}
-        style={styles.todos}
-      />
+      <SafeAreaView style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#4f46e5" />
+        <Text style={styles.loadingText}>Chargement...</Text>
+      </SafeAreaView>
     );
+  }
 
-  return <></>;
-});
+  if (!userProfile) {
+    return (
+      <SafeAreaView style={styles.errorContainer}>
+        <Text style={styles.errorText}>Erreur de chargement du profil</Text>
+      </SafeAreaView>
+    );
+  }
 
-// A button component to delete all the todos, only shows when there are some.
-const ClearTodos = observer(() => {
-  const todos = _todos$.get();
+  if (isEditing) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <ProfileEdit onClose={() => setIsEditing(false)} />
+      </SafeAreaView>
+    );
+  }
 
-  // Calculer le nombre de todos
-  const todosCount = todos ? Object.keys(todos).length : 0;
-
-  const handlePress = () => {
-    // Supprimer tous les todos
-    if (todos) {
-      Object.keys(todos).forEach((id) => {
-        _todos$[id].delete();
-      });
-    }
-  };
-
-  // Afficher le bouton seulement s'il y a des todos
-  return todosCount > 0 ? (
-    <TouchableOpacity onPress={handlePress}>
-      <Text style={styles.clearTodos}>Clear all ({todosCount})</Text>
-    </TouchableOpacity>
-  ) : null;
-});
-
-// The main app.
-const App = observer(() => {
   return (
-    <>
-      <ThemedText type="title" style={styles.heading}>
-        MyCompanion Demo
-      </ThemedText>
-      <NewTodo />
-      <Todos todos$={_todos$} />
-      <ClearTodos />
-    </>
-  );
-});
-
-export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
-      headerImage={
-        <Image
-          source={require("@/assets/images/partial-react-logo.png")}
-          style={styles.reactLogo}
-        />
-      }
-    >
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome to MyCompanion!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-
-      {/* Profil utilisateur connecté */}
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">👤 Votre Profil</ThemedText>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>👤 Mon Profil</Text>
+        <TouchableOpacity
+          style={styles.editButton}
+          onPress={() => setIsEditing(true)}
+        >
+          <Text style={styles.editButtonText}>✏️ Éditer</Text>
+        </TouchableOpacity>
+      </View>
+      
+      <View style={styles.content}>
         <UserProfile />
-      </ThemedView>
-
-      {/* <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">
-          📝 Todo Demo (Legend-State + Supabase)
-        </ThemedText>
-        <ThemedText>
-          Ceci est un exemple fonctionnel de synchronisation en temps réel avec
-          Supabase et Legend-State.
-        </ThemedText>
-        <App />
-      </ThemedView>
-
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">🚀 Prochaines étapes</ThemedText>
-        <ThemedText>
-          Maintenant que l'authentification fonctionne, vous pouvez commencer à
-          développer les fonctionnalités MyCompanion :
-        </ThemedText>
-        <ThemedText style={styles.bulletPoint}>
-          • Interface pour les seniors
-        </ThemedText>
-        <ThemedText style={styles.bulletPoint}>• Dashboard famille</ThemedText>
-        <ThemedText style={styles.bulletPoint}>
-          • Gestion des alertes
-        </ThemedText>
-        <ThemedText style={styles.bulletPoint}>
-          • Rapports d'activité
-        </ThemedText>
-      </ThemedView>
-
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">🛠️ Développement</ThemedText>
-        <ThemedText>
-          Utilisez les scripts npm pour gérer vos données :
-        </ThemedText>
-        <ThemedText style={styles.command}>npm run seed:demo</ThemedText>
-        <ThemedText style={styles.command}>npm run health:check</ThemedText>
-        <ThemedText style={styles.command}>npm run analytics:report</ThemedText>
-      </ThemedView> */}
-    </ParallaxScrollView>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: "row",
+  container: {
+    flex: 1,
+    backgroundColor: "#f8fafc",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
     alignItems: "center",
-    gap: 8,
+    backgroundColor: "#f8fafc",
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: "#64748b",
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: "absolute",
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f8fafc",
   },
-  heading: {
+  errorText: {
+    fontSize: 16,
+    color: "#ef4444",
+    textAlign: "center",
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 20,
+    backgroundColor: "white",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e2e8f0",
+  },
+  title: {
     fontSize: 24,
     fontWeight: "bold",
-    textAlign: "center",
-    marginBottom: 16,
+    color: "#1e293b",
   },
-  input: {
-    borderColor: "#999",
+  editButton: {
+    backgroundColor: "#4f46e5",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     borderRadius: 8,
-    borderWidth: 2,
-    flex: 0,
-    height: 64,
-    marginTop: 16,
-    padding: 16,
-    fontSize: 20,
   },
-  todos: {
-    flex: 1,
-    marginTop: 16,
-  },
-  todo: {
-    borderRadius: 8,
-    marginBottom: 16,
-    padding: 16,
-    backgroundColor: "#ffd",
-  },
-  done: {
-    backgroundColor: "#dfd",
-  },
-  todoText: {
-    fontSize: 20,
-  },
-  clearTodos: {
-    margin: 16,
-    flex: 0,
-    textAlign: "center",
-    fontSize: 16,
-    color: "#d32f2f",
+  editButtonText: {
+    color: "white",
+    fontSize: 14,
     fontWeight: "600",
   },
-  bulletPoint: {
-    marginLeft: 16,
-    marginVertical: 2,
-  },
-  command: {
-    fontFamily: "monospace",
-    backgroundColor: "#f3f4f6",
-    padding: 8,
-    borderRadius: 4,
-    marginVertical: 2,
+  content: {
+    flex: 1,
   },
 });
