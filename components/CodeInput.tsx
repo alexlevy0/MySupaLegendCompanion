@@ -1,17 +1,17 @@
-import React, { useState, useRef } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
-  TouchableOpacity,
-  ActivityIndicator,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
+import React, { useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
+} from "react-native";
 
 interface CodeInputProps {
   onSubmit: (code: string, relationship: string) => Promise<void>;
@@ -86,7 +86,7 @@ export default function CodeInput({ onSubmit, loading = false }: CodeInputProps)
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
     >
-      <View style={styles.card}>
+      <ScrollView style={styles.card}>
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.iconContainer}>
@@ -189,7 +189,7 @@ export default function CodeInput({ onSubmit, loading = false }: CodeInputProps)
             de santé et aux alertes de votre proche
           </Text>
         </View>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
