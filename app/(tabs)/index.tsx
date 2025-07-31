@@ -83,7 +83,7 @@ export default function ProfileScreen() {
   }
 
   return (
-    <View style={[styles.fullContainer, { borderWidth: 1, borderColor: 'red', borderStyle: 'solid' }]}>
+    <View style={[styles.fullContainer]}>
       <LinearGradient
         colors={['#6366f1', '#8b5cf6', '#a855f7']}
         style={styles.headerGradient}
