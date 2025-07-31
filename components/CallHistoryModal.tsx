@@ -268,7 +268,7 @@ export const CallHistoryModal: React.FC<CallHistoryModalProps> = ({
             />
           )}
         </View>
-      </View>
+      </SafeAreaView>
     </Modal>
   );
 };
