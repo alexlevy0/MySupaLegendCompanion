@@ -86,22 +86,11 @@ export async function joinFamilyWithCode(
     const cleanCode = code.trim().toUpperCase();
 
     // Vérifier la validité du code
+    console.log("🔍 Searching for code:", cleanCode);
+    
     const { data: codeData, error: codeError } = await supabase
       .from("family_invite_codes")
-      .select(`
-        id,
-        senior_id,
-        current_uses,
-        max_uses,
-        expires_at,
-        is_active,
-        seniors (
-          id,
-          first_name,
-          last_name,
-          phone
-        )
-      `)
+      .select("*")
       .eq("code", cleanCode)
       .maybeSingle();
 
@@ -120,6 +109,8 @@ export async function joinFamilyWithCode(
         error: "Code invalide ou introuvable",
       };
     }
+
+    console.log("✅ Code found:", codeData);
 
     // Vérifier si le code est actif
     if (!codeData.is_active) {
@@ -175,6 +166,21 @@ export async function joinFamilyWithCode(
       access_level: "standard",
     });
 
+    // Récupérer les informations du senior
+    const { data: seniorData, error: seniorError } = await supabase
+      .from("seniors")
+      .select("id, first_name, last_name, phone")
+      .eq("id", codeData.senior_id)
+      .single();
+
+    if (seniorError || !seniorData) {
+      console.error("❌ Error fetching senior:", seniorError);
+      return {
+        success: false,
+        error: "Erreur lors de la récupération des informations",
+      };
+    }
+
     // Enregistrer l'utilisation du code
     await supabase.rpc("record_code_usage", {
       p_code_id: codeData.id,
@@ -185,7 +191,7 @@ export async function joinFamilyWithCode(
     console.log("✅ Successfully joined family");
     return {
       success: true,
-      seniorInfo: codeData.seniors,
+      seniorInfo: seniorData,
     };
   } catch (error) {
     console.error("❌ Error joining family with code:", error);
@@ -223,7 +229,7 @@ export async function getFamilyCode(seniorId: string): Promise<string | null> {
       .eq("senior_id", seniorId)
       .eq("is_active", true)
       .gte("expires_at", new Date().toISOString())
-      .lt("current_uses", supabase.raw("max_uses"))
+      .filter("current_uses", "lt", "max_uses")
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
