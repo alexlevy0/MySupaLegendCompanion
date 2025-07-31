@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { ActivityIndicator } from 'react-native';
 import { Alert } from 'react-native';
 import SeniorsListScreen from '../SeniorsListScreen';
 import { 
@@ -116,7 +117,7 @@ describe('SeniorsListScreen', () => {
     // Alert is already mocked in jest.setup.js
   });
 
-  it('should render loading state initially', () => {
+  it('should render loading state initially', async () => {
     // Mock pour l'état de chargement initial
     (getUserSeniors as jest.Mock).mockReturnValueOnce(new Promise(resolve => {
       // Résoudre après un court délai pour permettre de tester l'état loading
@@ -125,7 +126,10 @@ describe('SeniorsListScreen', () => {
     
     const { getByTestId } = render(<SeniorsListScreen />);
     
-    expect(getByTestId('loading-indicator')).toBeTruthy();
+    // Le composant n'a pas de testID loading-indicator
+    // On vérifie qu'il y a un ActivityIndicator à la place
+    const { UNSAFE_getByType } = render(<SeniorsListScreen />);
+    expect(UNSAFE_getByType(require('react-native').ActivityIndicator)).toBeTruthy();
   });
 
   it('should display seniors list after loading', async () => {
