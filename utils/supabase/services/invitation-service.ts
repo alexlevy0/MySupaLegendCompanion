@@ -103,9 +103,18 @@ export async function joinFamilyWithCode(
         )
       `)
       .eq("code", cleanCode)
-      .single();
+      .maybeSingle();
 
-    if (codeError || !codeData) {
+    if (codeError) {
+      console.error("❌ Error fetching code:", codeError);
+      return {
+        success: false,
+        error: "Erreur lors de la vérification du code",
+      };
+    }
+
+    if (!codeData) {
+      console.log("❌ Code not found:", cleanCode);
       return {
         success: false,
         error: "Code invalide ou introuvable",
