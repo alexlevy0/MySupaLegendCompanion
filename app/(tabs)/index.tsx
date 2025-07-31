@@ -138,7 +138,7 @@ export default function HomeScreen() {
         <UserProfile />
       </ThemedView>
 
-      <ThemedView style={styles.stepContainer}>
+      {/* <ThemedView style={styles.stepContainer}>
         <ThemedText type="subtitle">
           📝 Todo Demo (Legend-State + Supabase)
         </ThemedText>
@@ -175,7 +175,7 @@ export default function HomeScreen() {
         <ThemedText style={styles.command}>npm run seed:demo</ThemedText>
         <ThemedText style={styles.command}>npm run health:check</ThemedText>
         <ThemedText style={styles.command}>npm run analytics:report</ThemedText>
-      </ThemedView>
+      </ThemedView> */}
     </ParallaxScrollView>
   );
 }

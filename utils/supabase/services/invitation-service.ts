@@ -1,10 +1,8 @@
-import { supabase, generateId } from "../client";
-import { 
-  InviteFamilyMemberData
-} from "../types";
 import { authState$ } from "../auth/auth-state";
-import { createFamilyRelation } from "./senior-service";
+import { generateId, supabase } from "../client";
+import { InviteFamilyMemberData } from "../types";
 import { getRedirectUrl } from "../utils/url-helpers";
+import { createFamilyRelation } from "./senior-service";
 
 // =====================================================
 // SERVICE INVITATIONS FAMILIALES
@@ -26,7 +24,7 @@ export async function inviteFamilyMember(
     // Récupérer les infos du senior pour l'email
     const { data: senior, error: seniorError } = await supabase
       .from("seniors")
-      .select("first_name, last_name")
+      .select("first_name, last_name, phone")
       .eq("id", inviteData.seniorId)
       .eq("deleted", false)
       .single();
@@ -75,41 +73,31 @@ export async function inviteFamilyMember(
         user_id: existingUser.id,
         senior_id: inviteData.seniorId,
         relationship: inviteData.relationship,
-        is_primary_contact: false, // Les invités ne sont jamais contacts principaux
+        is_primary_contact: false,
         notification_preferences: inviteData.notificationPreferences,
         access_level: inviteData.accessLevel,
       });
 
       console.log("✅ Family relation created for existing user");
 
-      // 🔧 TODO: Envoyer un email de notification à l'utilisateur existant
-      // pour l'informer qu'il a maintenant accès aux données du senior
-    } else {
-      // L'utilisateur n'existe pas - utiliser le système d'invitation par email
-      console.log("📨 User doesn't exist, sending invitation email");
-
-      // ✅ MÉTHODE RECOMMANDÉE : Invitation par signup avec metadata
-      // Au lieu de créer un compte admin, on va envoyer un lien d'inscription pré-rempli
-
-      // Stocker l'invitation dans une table temporaire (ou localStorage côté client)
-      const invitationToken = generateId();
-
-      // Créer un lien d'inscription avec les données pré-remplies
-      const invitationData = {
-        token: invitationToken,
-        seniorId: inviteData.seniorId,
-        seniorName: `${senior.first_name} ${senior.last_name}`,
+      // Envoyer un email de notification à l'utilisateur existant
+      // Utiliser Supabase Auth pour envoyer un email personnalisé
+      await sendNotificationEmail(existingUser.email, {
+        type: "family_access_granted",
         inviterName: `${currentUser.first_name} ${currentUser.last_name}`,
+        seniorName: `${senior.first_name} ${senior.last_name}`,
         relationship: inviteData.relationship,
         accessLevel: inviteData.accessLevel,
-        notificationPreferences: inviteData.notificationPreferences,
-        email: inviteData.email,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 jours
-      };
+      });
+    } else {
+      // L'utilisateur n'existe pas - créer une invitation avec Magic Link
+      console.log("📨 User doesn't exist, creating invitation with magic link");
 
-      // 🔧 OPTION 1: Stocker l'invitation dans une table (recommandé)
-      const { error: inviteError } = await supabase
-        .from("family_invitations") // Table à créer
+      const invitationToken = generateId();
+
+      // Stocker l'invitation dans la base
+      const { data: invitation, error: inviteError } = await supabase
+        .from("family_invitations")
         .insert({
           id: invitationToken,
           senior_id: inviteData.seniorId,
@@ -117,46 +105,53 @@ export async function inviteFamilyMember(
           email: inviteData.email.toLowerCase(),
           relationship: inviteData.relationship,
           access_level: inviteData.accessLevel,
-          notification_preferences: JSON.stringify(
-            inviteData.notificationPreferences
-          ),
-          expires_at: invitationData.expiresAt,
+          notification_preferences: inviteData.notificationPreferences,
+          expires_at: new Date(
+            Date.now() + 7 * 24 * 60 * 60 * 1000
+          ).toISOString(), // 7 jours
           status: "pending",
-        });
+          invitation_metadata: {
+            inviterName: `${currentUser.first_name} ${currentUser.last_name}`,
+            seniorName: `${senior.first_name} ${senior.last_name}`,
+            seniorPhone: senior.phone,
+          },
+        })
+        .select()
+        .single();
 
-      // 🔧 OPTION 2: Si pas de table, encoder les données dans l'URL (moins sécurisé)
       if (inviteError) {
-        console.warn(
-          "Could not store invitation in DB, using URL params:",
-          inviteError
-        );
+        throw inviteError;
       }
 
-      // Créer l'URL d'invitation qui redirige vers signup
-      const invitationUrl = `${getRedirectUrl(
-        "/auth/invite"
-      )}?token=${invitationToken}&email=${encodeURIComponent(
-        inviteData.email
-      )}`;
-
-      console.log("🔗 Invitation URL:", invitationUrl);
-
-      // ⚠️ PROBLÈME: On ne peut pas envoyer d'email directement depuis le client
-      // Il faut soit :
-      // 1. Une fonction Edge/API pour envoyer l'email
-      // 2. Un service tiers (Resend, SendGrid, etc.)
-      // 3. Utiliser Supabase Auth avec un template personnalisé
-
-      // 🔧 SOLUTION TEMPORAIRE: Simuler l'envoi et logger l'URL
-      console.log("📧 Email invitation should be sent to:", inviteData.email);
-      console.log("📧 Email content should include:", {
-        inviterName: invitationData.inviterName,
-        seniorName: invitationData.seniorName,
-        invitationUrl,
+      // Envoyer le Magic Link via Supabase Auth
+      const { error: magicLinkError } = await supabase.auth.signInWithOtp({
+        email: inviteData.email,
+        options: {
+          // Ces données seront disponibles dans le template d'email
+          data: {
+            invitation_token: invitationToken,
+            inviter_name: `${currentUser.first_name} ${currentUser.last_name}`,
+            senior_name: `${senior.first_name} ${senior.last_name}`,
+            relationship: inviteData.relationship,
+            access_level: inviteData.accessLevel,
+            type: "family_invitation",
+          },
+          // URL de redirection après connexion
+          emailRedirectTo: `${window.location.origin}/auth/accept-invitation?token=${invitationToken}`,
+        },
       });
 
-      // En production, vous devriez :
-      // await sendInvitationEmail(invitationData, invitationUrl);
+      if (magicLinkError) {
+        // Nettoyer l'invitation en cas d'erreur
+        await supabase
+          .from("family_invitations")
+          .delete()
+          .eq("id", invitationToken);
+
+        throw magicLinkError;
+      }
+
+      console.log("✅ Magic link invitation sent successfully");
     }
 
     console.log("✅ Family member invitation process completed");
@@ -177,7 +172,8 @@ export async function getInvitationByToken(token: string) {
         seniors (
           id,
           first_name,
-          last_name
+          last_name,
+          phone
         ),
         users!inviter_id (
           first_name,
@@ -203,7 +199,7 @@ export async function getInvitationByToken(token: string) {
         .from("family_invitations")
         .update({ status: "expired" })
         .eq("id", token);
-      
+
       throw new Error("Cette invitation a expiré");
     }
 
@@ -406,5 +402,143 @@ export async function resendInvitation(invitationId: string) {
   } catch (error) {
     console.error("❌ Failed to resend invitation:", error);
     throw error;
+  }
+}
+
+async function sendNotificationEmail(
+  email: string,
+  metadata: any
+): Promise<void> {
+  try {
+    // Utiliser une fonction Edge/API pour envoyer l'email
+    // ou un webhook Supabase qui déclenche l'envoi
+
+    // Pour l'instant, on peut utiliser un appel à une fonction Edge
+    const { error } = await supabase.functions.invoke("send-email", {
+      body: {
+        to: email,
+        template: "family_access_granted",
+        data: metadata,
+      },
+    });
+
+    if (error) {
+      console.error("Failed to send notification email:", error);
+      // Ne pas faire échouer l'invitation si l'email échoue
+    }
+  } catch (error) {
+    console.error("Failed to send notification email:", error);
+  }
+}
+
+export async function acceptInvitationAfterAuth(token: string): Promise<any> {
+  try {
+    console.log("✅ Accepting invitation after auth:", token);
+
+    // Récupérer l'utilisateur connecté
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user) {
+      throw new Error("User not authenticated");
+    }
+
+    // Récupérer l'invitation
+    const invitation = await getInvitationByToken(token);
+    if (!invitation) {
+      throw new Error("Invitation invalide");
+    }
+
+    // Vérifier que l'email correspond
+    if (invitation.email.toLowerCase() !== user.email?.toLowerCase()) {
+      throw new Error("Cette invitation n'est pas pour cet email");
+    }
+
+    // Vérifier si l'utilisateur a un profil dans public.users
+    let userId = user.id;
+    const { data: userProfile, error: profileError } = await supabase
+      .from("users")
+      .select("id")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (!userProfile) {
+      // Créer le profil utilisateur s'il n'existe pas
+      const { error: createError } = await supabase.from("users").insert({
+        id: userId,
+        email: user.email!,
+        user_type: "family",
+        first_name:
+          user.user_metadata?.first_name || invitation.email.split("@")[0],
+        last_name: user.user_metadata?.last_name || "",
+        is_active: true,
+      });
+
+      if (createError && createError.code !== "23505") {
+        // Ignorer si déjà existe
+        throw createError;
+      }
+    }
+
+    // Créer la relation familiale
+    await createFamilyRelation({
+      user_id: userId,
+      senior_id: invitation.senior_id,
+      relationship: invitation.relationship,
+      is_primary_contact: false,
+      notification_preferences: invitation.notification_preferences,
+      access_level: invitation.access_level,
+    });
+
+    // Marquer l'invitation comme utilisée
+    const { error } = await supabase
+      .from("family_invitations")
+      .update({
+        status: "accepted",
+        accepted_by: userId,
+        accepted_at: new Date().toISOString(),
+      })
+      .eq("id", token);
+
+    if (error) {
+      console.warn("Could not update invitation status:", error);
+    }
+
+    console.log("✅ Invitation accepted successfully");
+    return invitation;
+  } catch (error) {
+    console.error("❌ Failed to accept invitation:", error);
+    throw error;
+  }
+}
+export async function getPendingInvitationsForEmail(email: string) {
+  try {
+    const { data, error } = await supabase
+      .from("family_invitations")
+      .select(
+        `
+        *,
+        seniors (
+          id,
+          first_name,
+          last_name
+        ),
+        users!inviter_id (
+          first_name,
+          last_name
+        )
+      `
+      )
+      .eq("email", email.toLowerCase())
+      .eq("status", "pending")
+      .gte("expires_at", new Date().toISOString())
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error("❌ Failed to get pending invitations:", error);
+    return [];
   }
 }

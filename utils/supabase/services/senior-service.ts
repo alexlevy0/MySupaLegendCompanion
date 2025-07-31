@@ -1,12 +1,7 @@
-import { supabase, generateId } from "../client";
-import { 
-  SeniorData, 
-  SeniorCreateData, 
-  FamilyRelationData,
-  FamilyMemberWithUser 
-} from "../types";
 import { authState$ } from "../auth/auth-state";
+import { supabase } from "../client";
 import { seniors$ } from "../observables/seniors";
+import { FamilyRelationData, SeniorCreateData, SeniorData } from "../types";
 import { validateFrenchPhone } from "../utils/validation";
 
 // =====================================================
@@ -652,25 +647,18 @@ export async function getFamilyMembers(seniorId: string) {
       .from("family_members")
       .select(
         `
-        id,
-        user_id,
-        relationship,
-        is_primary_contact,
-        access_level,
-        notification_preferences,
-        created_at,
-        users!inner (
+        *,
+        users (
+          id,
           first_name,
           last_name,
           email,
-          phone,
-          is_active
+          phone
         )
       `
       )
       .eq("senior_id", seniorId)
       .eq("deleted", false)
-      .eq("users.deleted", false)
       .order("created_at", { ascending: true });
 
     if (error) throw error;
@@ -685,17 +673,8 @@ export async function getFamilyMembers(seniorId: string) {
 export async function updateFamilyMemberAccess(
   memberId: string,
   newAccessLevel: "minimal" | "standard" | "full"
-): Promise<void> {
+) {
   try {
-    console.log("🔧 Updating family member access:", memberId, newAccessLevel);
-
-    // Vérifier que l'utilisateur actuel a le droit de modifier cet accès
-    const currentUser = authState$.user.get();
-    if (!currentUser) {
-      throw new Error("User not authenticated");
-    }
-
-    // Mettre à jour le niveau d'accès
     const { error } = await supabase
       .from("family_members")
       .update({
@@ -704,11 +683,8 @@ export async function updateFamilyMemberAccess(
       })
       .eq("id", memberId);
 
-    if (error) {
-      throw error;
-    }
-
-    console.log("✅ Family member access updated successfully");
+    if (error) throw error;
+    console.log("✅ Family member access updated");
   } catch (error) {
     console.error("❌ Failed to update family member access:", error);
     throw error;
