@@ -6,6 +6,7 @@ import {
   Alert,
   FlatList,
   Modal,
+  SafeAreaView,
   StyleSheet,
   TouchableOpacity,
   View,
@@ -273,6 +274,14 @@ export const CallHistoryModal: React.FC<CallHistoryModalProps> = ({
 };
 
 const styles = StyleSheet.create({
+  fullScreenContainer: {
+    flex: 1,
+    backgroundColor: 'white',
+  },
+  fullScreenContent: {
+    flex: 1,
+    backgroundColor: 'white',
+  },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
