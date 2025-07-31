@@ -88,7 +88,7 @@ export async function addSenior(seniorData: SeniorCreateData): Promise<string> {
     const { data: senior, error: insertError } = await supabase
       .from("seniors")
       .insert(insertData)
-      .select("id")
+      .select("id, join_code")
       .single();
 
     if (insertError) {
@@ -109,7 +109,7 @@ export async function addSenior(seniorData: SeniorCreateData): Promise<string> {
       );
     }
 
-    console.log("✅ Senior profile created successfully:", senior.id);
+    console.log("✅ Senior profile created successfully:", senior.id, "with join code:", senior.join_code);
 
     // Mettre à jour l'observable local pour Legend-State
     seniors$[senior.id].assign({
@@ -127,6 +127,7 @@ export async function addSenior(seniorData: SeniorCreateData): Promise<string> {
       communication_preferences: seniorData.communication_preferences || null,
       emergency_contact: seniorData.emergency_contact || cleanPhone,
       address: seniorData.address || null,
+      join_code: senior.join_code,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       deleted: false,
