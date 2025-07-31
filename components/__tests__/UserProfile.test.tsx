@@ -1,8 +1,11 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
-import { Alert, Platform } from 'react-native';
+import { Platform } from 'react-native';
 import UserProfile from '../UserProfile';
 import { getUserStats, signOut, useMyCompanionAuth } from '@/utils/SupaLegend';
+
+// Use global Alert mock
+const Alert = global.Alert;
 
 // Mock modules
 jest.mock('@/utils/SupaLegend', () => ({

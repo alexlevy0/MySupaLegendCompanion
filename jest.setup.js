@@ -127,6 +127,11 @@ jest.mock('react-native', () => {
   return RN;
 });
 
+// Make Alert mock accessible globally
+global.Alert = {
+  alert: jest.fn(),
+};
+
 // Global test utilities
 global.mockSupabaseAuth = (user = null, session = null) => {
   const supabase = require('@supabase/supabase-js').createClient();
