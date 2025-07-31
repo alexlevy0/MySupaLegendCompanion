@@ -18,7 +18,7 @@ import { fr } from 'date-fns/locale';
 interface CallHistoryModalProps {
   visible: boolean;
   onClose: () => void;
-  senior: Senior;
+  senior: Senior | any; // Temporairement any pour accepter les deux formats
 }
 
 export const CallHistoryModal: React.FC<CallHistoryModalProps> = ({ 

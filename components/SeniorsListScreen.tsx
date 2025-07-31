@@ -250,7 +250,9 @@ export default function SeniorsListScreen() {
       {
         text: "📞 Historique appels",
         onPress: () => {
-          setSelectedSenior(senior);
+          // Passer le senior complet avec le bon ID
+          const seniorData = senior.seniors || senior;
+          setSelectedSenior(seniorData);
           setShowCallHistory(true);
         },
       },
