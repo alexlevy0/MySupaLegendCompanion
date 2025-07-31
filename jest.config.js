@@ -7,6 +7,7 @@ module.exports = {
   ],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
+    '^react-native/Libraries/Animated/NativeAnimatedHelper$': '<rootDir>/__mocks__/NativeAnimatedHelper.js',
   },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
   transformIgnorePatterns: [

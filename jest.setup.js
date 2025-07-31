@@ -1,7 +1,30 @@
-import '@testing-library/jest-native/extend-expect';
+// Mock React Native Animated pour éviter les erreurs
+global.__reanimatedWorkletInit = jest.fn();
 
-// Mock de React Native modules
-jest.mock('react-native/Libraries/Animated/NativeAnimatedHelper');
+// Mock Expo modules that cause issues
+global.__ExpoImportMetaRegistry = jest.fn();
+
+// Suppress console warnings during tests  
+const originalWarn = console.warn;
+const originalError = console.error;
+const originalLog = console.log;
+
+global.console = {
+  ...console,
+  warn: jest.fn((...args) => {
+    if (args[0]?.includes?.('Clipboard') || args[0]?.includes?.('ProgressBarAndroid')) {
+      return;
+    }
+    originalWarn(...args);
+  }),
+  error: jest.fn((...args) => {
+    if (args[0]?.includes?.('TurboModuleRegistry')) {
+      return;
+    }
+    originalError(...args);
+  }),
+  log: originalLog,
+};
 
 // Mock Expo modules
 jest.mock('expo-router', () => ({
@@ -87,20 +110,10 @@ jest.mock('@legendapp/state', () => ({
   synced: jest.fn(),
 }));
 
-// Mock react-native modules
-jest.mock('react-native', () => {
-  const RN = jest.requireActual('react-native');
-  return {
-    ...RN,
-    Alert: {
-      alert: jest.fn(),
-    },
-    Platform: {
-      ...RN.Platform,
-      select: jest.fn((obj) => obj.default || obj.ios),
-    },
-  };
-});
+// Mock Alert separately
+jest.mock('react-native/Libraries/Alert/Alert', () => ({
+  alert: jest.fn(),
+}));
 
 // Global test utilities
 global.mockSupabaseAuth = (user = null, session = null) => {
@@ -112,16 +125,24 @@ global.mockSupabaseAuth = (user = null, session = null) => {
   return supabase;
 };
 
-// Silence console warnings during tests
-const originalError = console.error;
-const originalWarn = console.warn;
+// Mock Expo modules that might be missing
+jest.mock('expo-font', () => ({
+  loadAsync: jest.fn(),
+  isLoaded: jest.fn(() => true),
+}));
 
-beforeAll(() => {
-  console.error = jest.fn();
-  console.warn = jest.fn();
-});
+jest.mock('expo-asset', () => ({
+  Asset: {
+    loadAsync: jest.fn(),
+    fromModule: jest.fn(() => ({ uri: 'test-uri' })),
+  },
+}));
 
-afterAll(() => {
-  console.error = originalError;
-  console.warn = originalWarn;
-});
+jest.mock('expo-linking', () => ({
+  createURL: jest.fn((path) => `myapp://${path}`),
+  openURL: jest.fn(),
+  canOpenURL: jest.fn(() => Promise.resolve(true)),
+  openSettings: jest.fn(),
+}));
+
+// Ces fonctions sont déjà mockées plus haut, on n'a pas besoin de les redéfinir
