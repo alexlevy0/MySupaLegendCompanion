@@ -133,14 +133,11 @@ jest.mock('react-native', () => {
 // Mock @react-native-picker/picker
 jest.mock('@react-native-picker/picker', () => {
   const React = require('react');
-  const View = require('react-native').View;
+  const MockPicker = ({ children }) => React.createElement('View', null, children);
+  MockPicker.Item = ({ label }) => React.createElement('Text', null, label);
+  
   return {
-    Picker: React.forwardRef((props, ref) => 
-      React.createElement(View, { ...props, ref })
-    ),
-    default: React.forwardRef((props, ref) => 
-      React.createElement(View, { ...props, ref })
-    ),
+    Picker: MockPicker,
   };
 });
 
