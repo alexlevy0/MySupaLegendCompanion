@@ -301,18 +301,23 @@ export async function getCodeStatistics(seniorId: string): Promise<{
 }
 
 // =====================================================
-// ANCIENNES FONCTIONS (SYSTÈME EMAIL) - À SUPPRIMER
+// ANCIENNES FONCTIONS (SYSTÈME EMAIL) - DEPRECATED
+// Ces fonctions sont conservées temporairement pour la compatibilité
+// mais ne doivent plus être utilisées
 // =====================================================
 
-// ✅ Inviter un membre de famille
+// ⚠️ DEPRECATED - Utiliser generateFamilyCode() à la place
 export async function inviteFamilyMember(
   inviteData: InviteFamilyMemberData
 ): Promise<void> {
-  try {
-    console.log("✉️ Inviting family member:", inviteData.email);
+  console.warn("⚠️ inviteFamilyMember is deprecated. Use generateFamilyCode() instead.");
+  throw new Error("Cette fonctionnalité a été remplacée par le système de codes famille.");
+}
 
-    // Vérifier que l'utilisateur actuel est connecté
-    const currentUser = authState$.user.get();
+// L'ancien code d'invitation par email a été supprimé
+// Le reste du code ci-dessous sera également supprimé prochainement
+
+/*
     if (!currentUser) {
       throw new Error("User not authenticated");
     }
@@ -838,3 +843,4 @@ export async function getPendingInvitationsForEmail(email: string) {
     return [];
   }
 }
+*/
