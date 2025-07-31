@@ -46,6 +46,7 @@
     "seed:demo:safe": "node scripts/seed-demo-data.js --safe",
     "seed:clean": "node scripts/clean-demo-data.js",
     "seed:fresh": "npm run seed:clean && npm run seed:demo",
+    "seed:calls": "node scripts/seed-call-history.js",
     "analytics:export": "node scripts/export-analytics.js",
     "analytics:view": "node scripts/view-analytics.js",
     "analytics:report": "npm run analytics:export && npm run analytics:view",

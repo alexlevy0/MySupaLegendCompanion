@@ -16,6 +16,7 @@ import AddSeniorForm from "@/components/AddSeniorForm";
 import EditSeniorForm from "@/components/EditSeniorForm";
 import FamilySharingScreen from "@/components/FamilySharingScreen";
 import JoinFamilyScreen from "@/components/JoinFamilyScreen";
+import { CallHistoryModal } from "@/components/CallHistoryModal";
 import {
   deleteSenior,
   getSeniorStats,
@@ -72,6 +73,7 @@ export default function SeniorsListScreen() {
   const [showEditSenior, setShowEditSenior] = useState(false);
   const [showFamilySharing, setShowFamilySharing] = useState(false);
   const [showJoinFamily, setShowJoinFamily] = useState(false);
+  const [showCallHistory, setShowCallHistory] = useState(false);
   const [selectedSenior, setSelectedSenior] = useState<Senior | null>(null);
 
   // États pour les statistiques
@@ -247,7 +249,10 @@ export default function SeniorsListScreen() {
       },
       {
         text: "📞 Historique appels",
-        onPress: () => Alert.alert("Info", "Fonctionnalité en développement"),
+        onPress: () => {
+          setSelectedSenior(senior);
+          setShowCallHistory(true);
+        },
       },
     ];
 
@@ -530,6 +535,15 @@ export default function SeniorsListScreen() {
           onBack={() => setShowJoinFamily(false)}
         />
       </Modal>
+
+      {/* Modal - Historique des appels */}
+      {selectedSenior && (
+        <CallHistoryModal
+          visible={showCallHistory}
+          onClose={() => setShowCallHistory(false)}
+          senior={selectedSenior}
+        />
+      )}
     </SafeAreaView>
   );
 }
