@@ -1,22 +1,24 @@
 import {
     getFamilyMembers,
-    inviteFamilyMember,
     removeFamilyMember,
     updateFamilyMemberAccess
 } from "@/utils/SupaLegend";
+import {
+    getSeniorJoinCode,
+    regenerateJoinCode
+} from "@/utils/supabase/services/join-code-service";
 import React, { useEffect, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
     FlatList,
     SafeAreaView,
-    ScrollView,
     StyleSheet,
-    Switch,
     Text,
-    TextInput,
     TouchableOpacity,
     View,
+    Share,
+    Clipboard,
 } from "react-native";
 
 interface FamilyMember {
@@ -50,86 +52,85 @@ export default function FamilySharingScreen({
 }: FamilySharingProps) {
   const [members, setMembers] = useState<FamilyMember[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showInviteForm, setShowInviteForm] = useState(false);
+  const [joinCode, setJoinCode] = useState<string | null>(null);
+  const [loadingCode, setLoadingCode] = useState(false);
 
-  // État du formulaire d'invitation
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRelationship, setInviteRelationship] = useState("enfant");
-  const [inviteAccessLevel, setInviteAccessLevel] = useState<
-    "minimal" | "standard" | "full"
-  >("standard");
-  const [inviteNotifications, setInviteNotifications] = useState({
-    dailyReports: false,
-    emergencyAlerts: true,
-    weeklyReports: true,
-    smsAlerts: false,
-  });
-  const [sending, setSending] = useState(false);
-
-  // Charger les membres de la famille
-  const loadFamilyMembers = async () => {
+  // Charger les membres de la famille et le code
+  const loadData = async () => {
     try {
       setLoading(true);
-      const familyMembers = await getFamilyMembers(senior.id);
+      
+      // Charger les membres en parallèle avec le code
+      const [familyMembers, code] = await Promise.all([
+        getFamilyMembers(senior.id),
+        getSeniorJoinCode(senior.id)
+      ]);
+      
       setMembers(familyMembers);
+      setJoinCode(code);
     } catch (error) {
-      console.error("❌ Failed to load family members:", error);
-      Alert.alert("Erreur", "Impossible de charger les membres de la famille");
+      console.error("❌ Failed to load data:", error);
+      Alert.alert("Erreur", "Impossible de charger les données");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadFamilyMembers();
+    loadData();
   }, [senior.id]);
 
-  // Envoyer une invitation
-  const handleSendInvite = async () => {
-    if (!inviteEmail.trim()) {
-      Alert.alert("Erreur", "Veuillez saisir une adresse email");
-      return;
+  // Copier le code dans le presse-papiers
+  const handleCopyCode = () => {
+    if (joinCode) {
+      Clipboard.setString(joinCode);
+      Alert.alert("✅ Copié !", "Le code a été copié dans le presse-papiers");
     }
+  };
 
-    // Validation email simple
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(inviteEmail)) {
-      Alert.alert("Erreur", "Veuillez saisir une adresse email valide");
-      return;
-    }
+  // Partager le code
+  const handleShareCode = async () => {
+    if (!joinCode) return;
 
-    setSending(true);
     try {
-      await inviteFamilyMember({
-        seniorId: senior.id,
-        email: inviteEmail.trim(),
-        relationship: inviteRelationship,
-        accessLevel: inviteAccessLevel,
-        notificationPreferences: inviteNotifications,
+      const message = `Rejoignez la famille de ${senior.first_name} ${senior.last_name} sur MyCompanion avec le code : ${joinCode}`;
+      
+      await Share.share({
+        message,
+        title: "Code de partage MyCompanion",
       });
-
-      Alert.alert(
-        "✉️ Invitation envoyée !",
-        `Une invitation a été envoyée à ${inviteEmail}.\n\nLa personne recevra un email avec un lien pour créer son compte et accéder aux informations de ${senior.first_name}.`,
-        [
-          {
-            text: "OK",
-            onPress: () => {
-              setShowInviteForm(false);
-              setInviteEmail("");
-              loadFamilyMembers(); // Recharger la liste
-            },
-          },
-        ]
-      );
-    } catch (error: any) {
-      Alert.alert(
-        "Erreur",
-        error.message || "Impossible d'envoyer l'invitation"
-      );
-    } finally {
-      setSending(false);
+    } catch (error) {
+      console.error("❌ Error sharing code:", error);
     }
+  };
+
+  // Régénérer le code
+  const handleRegenerateCode = () => {
+    Alert.alert(
+      "🔄 Régénérer le code ?",
+      "L'ancien code ne fonctionnera plus. Les membres actuels gardent leur accès.",
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: "Régénérer",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              setLoadingCode(true);
+              const newCode = await regenerateJoinCode(senior.id);
+              if (newCode) {
+                setJoinCode(newCode);
+                Alert.alert("✅ Code régénéré", `Le nouveau code est : ${newCode}`);
+              }
+            } catch (error: any) {
+              Alert.alert("Erreur", error.message || "Impossible de régénérer le code");
+            } finally {
+              setLoadingCode(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   // Modifier l'accès d'un membre
@@ -149,7 +150,7 @@ export default function FamilySharingScreen({
           onPress: async () => {
             try {
               await updateFamilyMemberAccess(memberId, newAccessLevel);
-              await loadFamilyMembers();
+              await loadData();
               Alert.alert("✅ Modifié", "Niveau d'accès mis à jour");
             } catch (error: any) {
               Alert.alert("Erreur", error.message);
@@ -181,7 +182,7 @@ export default function FamilySharingScreen({
           onPress: async () => {
             try {
               await removeFamilyMember(member.id);
-              await loadFamilyMembers();
+              await loadData();
               Alert.alert("✅ Retiré", "Membre retiré de la famille");
             } catch (error: any) {
               Alert.alert("Erreur", error.message);
@@ -218,6 +219,51 @@ export default function FamilySharingScreen({
         return "#94a3b8";
     }
   };
+
+  // Rendu du code de partage
+  const renderJoinCodeSection = () => (
+    <View style={styles.codeSection}>
+      <Text style={styles.codeSectionTitle}>🔢 Code de partage famille</Text>
+      <Text style={styles.codeSectionSubtitle}>
+        Partagez ce code avec les membres de votre famille pour qu'ils puissent rejoindre
+      </Text>
+      
+      <View style={styles.codeContainer}>
+        {loadingCode ? (
+          <ActivityIndicator size="small" color="#4f46e5" />
+        ) : (
+          <>
+            <Text style={styles.codeText}>{joinCode || "----"}</Text>
+            <View style={styles.codeActions}>
+              <TouchableOpacity
+                style={styles.codeButton}
+                onPress={handleCopyCode}
+                disabled={!joinCode}
+              >
+                <Text style={styles.codeButtonText}>📋 Copier</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={styles.codeButton}
+                onPress={handleShareCode}
+                disabled={!joinCode}
+              >
+                <Text style={styles.codeButtonText}>📤 Partager</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[styles.codeButton, styles.regenerateButton]}
+                onPress={handleRegenerateCode}
+                disabled={loadingCode}
+              >
+                <Text style={styles.regenerateButtonText}>🔄 Nouveau</Text>
+              </TouchableOpacity>
+            </View>
+          </>
+        )}
+      </View>
+    </View>
+  );
 
   // Rendu d'un membre de famille
   const renderFamilyMember = ({ item }: { item: FamilyMember }) => (
@@ -290,156 +336,6 @@ export default function FamilySharingScreen({
     </View>
   );
 
-  // Formulaire d'invitation
-  const renderInviteForm = () => (
-    <ScrollView style={styles.inviteForm}>
-      <Text style={styles.formTitle}>👨‍👩‍👧‍👦 Inviter un membre de famille</Text>
-
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>Adresse email *</Text>
-        <TextInput
-          style={styles.input}
-          value={inviteEmail}
-          onChangeText={setInviteEmail}
-          placeholder="marie.dubois@gmail.com"
-          keyboardType="email-address"
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-      </View>
-
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>Lien de parenté</Text>
-        <View style={styles.relationButtons}>
-          {["enfant", "conjoint(e)", "frère/sœur", "petit-enfant", "autre"].map(
-            (relation) => (
-              <TouchableOpacity
-                key={relation}
-                style={[
-                  styles.relationButton,
-                  inviteRelationship === relation &&
-                    styles.relationButtonActive,
-                ]}
-                onPress={() => setInviteRelationship(relation)}
-              >
-                <Text
-                  style={[
-                    styles.relationButtonText,
-                    inviteRelationship === relation &&
-                      styles.relationButtonTextActive,
-                  ]}
-                >
-                  {relation}
-                </Text>
-              </TouchableOpacity>
-            )
-          )}
-        </View>
-      </View>
-
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>Niveau d'accès</Text>
-        <View style={styles.accessOptions}>
-          {(
-            [
-              { key: "minimal", label: "Minimal", desc: "Urgences seulement" },
-              {
-                key: "standard",
-                label: "Standard",
-                desc: "Rapports + urgences",
-              },
-              { key: "full", label: "Complet", desc: "Accès à tout" },
-            ] as const
-          ).map((option) => (
-            <TouchableOpacity
-              key={option.key}
-              style={[
-                styles.accessOption,
-                inviteAccessLevel === option.key && styles.accessOptionActive,
-              ]}
-              onPress={() => setInviteAccessLevel(option.key)}
-            >
-              <Text
-                style={[
-                  styles.accessOptionTitle,
-                  inviteAccessLevel === option.key &&
-                    styles.accessOptionTitleActive,
-                ]}
-              >
-                {option.label}
-              </Text>
-              <Text style={styles.accessOptionDesc}>{option.desc}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>Notifications</Text>
-
-        <View style={styles.notificationItem}>
-          <Text style={styles.notificationLabel}>Rapports quotidiens</Text>
-          <Switch
-            value={inviteNotifications.dailyReports}
-            onValueChange={(value) =>
-              setInviteNotifications({
-                ...inviteNotifications,
-                dailyReports: value,
-              })
-            }
-          />
-        </View>
-
-        <View style={styles.notificationItem}>
-          <Text style={styles.notificationLabel}>Alertes d'urgence</Text>
-          <Switch
-            value={inviteNotifications.emergencyAlerts}
-            onValueChange={(value) =>
-              setInviteNotifications({
-                ...inviteNotifications,
-                emergencyAlerts: value,
-              })
-            }
-          />
-        </View>
-
-        <View style={styles.notificationItem}>
-          <Text style={styles.notificationLabel}>Résumés hebdomadaires</Text>
-          <Switch
-            value={inviteNotifications.weeklyReports}
-            onValueChange={(value) =>
-              setInviteNotifications({
-                ...inviteNotifications,
-                weeklyReports: value,
-              })
-            }
-          />
-        </View>
-      </View>
-
-      <View style={styles.formButtons}>
-        <TouchableOpacity
-          style={[styles.button, styles.cancelButton]}
-          onPress={() => setShowInviteForm(false)}
-        >
-          <Text style={styles.cancelButtonText}>Annuler</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.button, styles.sendButton]}
-          onPress={handleSendInvite}
-          disabled={sending}
-        >
-          {sending ? (
-            <ActivityIndicator color="white" />
-          ) : (
-            <Text style={styles.sendButtonText}>✉️ Envoyer l'invitation</Text>
-          )}
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
-  );
-
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
@@ -454,21 +350,10 @@ export default function FamilySharingScreen({
             {senior.first_name} {senior.last_name}
           </Text>
         </View>
-
-        {!showInviteForm && (
-          <TouchableOpacity
-            style={styles.inviteButton}
-            onPress={() => setShowInviteForm(true)}
-          >
-            <Text style={styles.inviteButtonText}>+ Inviter</Text>
-          </TouchableOpacity>
-        )}
       </View>
 
       {/* Contenu */}
-      {showInviteForm ? (
-        renderInviteForm()
-      ) : loading ? (
+      {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#4f46e5" />
           <Text style={styles.loadingText}>Chargement des membres...</Text>
@@ -481,16 +366,19 @@ export default function FamilySharingScreen({
           style={styles.list}
           contentContainerStyle={styles.listContent}
           ListHeaderComponent={() => (
-            <View style={styles.listHeader}>
-              <Text style={styles.listTitle}>
-                👨‍👩‍👧‍👦 {members.length} membre{members.length > 1 ? "s" : ""} de
-                famille
-              </Text>
-              <Text style={styles.listSubtitle}>
-                Les membres peuvent consulter les informations de{" "}
-                {senior.first_name} selon leur niveau d'accès.
-              </Text>
-            </View>
+            <>
+              {renderJoinCodeSection()}
+              <View style={styles.listHeader}>
+                <Text style={styles.listTitle}>
+                  👨‍👩‍👧‍👦 {members.length} membre{members.length > 1 ? "s" : ""} de
+                  famille
+                </Text>
+                <Text style={styles.listSubtitle}>
+                  Les membres peuvent consulter les informations de{" "}
+                  {senior.first_name} selon leur niveau d'accès.
+                </Text>
+              </View>
+            </>
           )}
         />
       )}
@@ -532,17 +420,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#64748b",
   },
-  inviteButton: {
-    backgroundColor: "#4f46e5",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  inviteButtonText: {
-    color: "white",
-    fontSize: 14,
-    fontWeight: "600",
-  },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
@@ -558,6 +435,63 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 20,
+  },
+  codeSection: {
+    backgroundColor: "white",
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  codeSectionTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#1e293b",
+    marginBottom: 8,
+  },
+  codeSectionSubtitle: {
+    fontSize: 14,
+    color: "#64748b",
+    marginBottom: 20,
+    lineHeight: 20,
+  },
+  codeContainer: {
+    alignItems: "center",
+  },
+  codeText: {
+    fontSize: 36,
+    fontWeight: "bold",
+    color: "#4f46e5",
+    letterSpacing: 8,
+    marginBottom: 20,
+  },
+  codeActions: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  codeButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+    backgroundColor: "#f1f5f9",
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+  },
+  codeButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#4f46e5",
+  },
+  regenerateButton: {
+    backgroundColor: "#fff7ed",
+    borderColor: "#fed7aa",
+  },
+  regenerateButtonText: {
+    color: "#ea580c",
   },
   listHeader: {
     marginBottom: 20,
@@ -661,123 +595,6 @@ const styles = StyleSheet.create({
   removeButtonText: {
     fontSize: 12,
     color: "#dc2626",
-    fontWeight: "600",
-  },
-  inviteForm: {
-    padding: 20,
-  },
-  formTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#1e293b",
-    marginBottom: 24,
-  },
-  inputContainer: {
-    marginBottom: 24,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#374151",
-    marginBottom: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#d1d5db",
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    backgroundColor: "white",
-  },
-  relationButtons: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  relationButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: "#f1f5f9",
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-  },
-  relationButtonActive: {
-    backgroundColor: "#4f46e5",
-    borderColor: "#4f46e5",
-  },
-  relationButtonText: {
-    fontSize: 14,
-    color: "#64748b",
-  },
-  relationButtonTextActive: {
-    color: "white",
-    fontWeight: "600",
-  },
-  accessOptions: {
-    gap: 12,
-  },
-  accessOption: {
-    padding: 16,
-    borderRadius: 8,
-    backgroundColor: "white",
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-  },
-  accessOptionActive: {
-    borderColor: "#4f46e5",
-    backgroundColor: "#f8fafc",
-  },
-  accessOptionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#1e293b",
-    marginBottom: 4,
-  },
-  accessOptionTitleActive: {
-    color: "#4f46e5",
-  },
-  accessOptionDesc: {
-    fontSize: 14,
-    color: "#64748b",
-  },
-  notificationItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f1f5f9",
-  },
-  notificationLabel: {
-    fontSize: 16,
-    color: "#374151",
-  },
-  formButtons: {
-    flexDirection: "row",
-    gap: 12,
-    marginTop: 24,
-  },
-  button: {
-    flex: 1,
-    borderRadius: 8,
-    padding: 14,
-    alignItems: "center",
-  },
-  cancelButton: {
-    backgroundColor: "#f1f5f9",
-  },
-  cancelButtonText: {
-    color: "#64748b",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  sendButton: {
-    backgroundColor: "#4f46e5",
-  },
-  sendButtonText: {
-    color: "white",
-    fontSize: 16,
     fontWeight: "600",
   },
 });

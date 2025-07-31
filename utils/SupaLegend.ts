@@ -26,7 +26,7 @@ export * from "./supabase/observables";
 // Services
 export * from "./supabase/services/user-service";
 export * from "./supabase/services/senior-service";
-export * from "./supabase/services/invitation-service";
+export * from "./supabase/services/join-code-service";
 export * from "./supabase/services/call-service";
 export * from "./supabase/services/alert-service";
 
