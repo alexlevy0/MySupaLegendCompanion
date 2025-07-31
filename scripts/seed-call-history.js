@@ -51,7 +51,7 @@ async function seedCallHistory() {
         endDate.setSeconds(endDate.getSeconds() + duration);
         
         // Statut aléatoire
-        const statuses = ['completed', 'completed', 'completed', 'missed', 'scheduled'];
+        const statuses = ['completed', 'completed', 'completed', 'no_answer', 'scheduled', 'failed'];
         const status = statuses[Math.floor(Math.random() * statuses.length)];
         
         // Humeur aléatoire
@@ -145,12 +145,14 @@ async function seedCallHistory() {
     
     // Afficher quelques statistiques
     const completedCalls = calls.filter(c => c.status === 'completed').length;
-    const missedCalls = calls.filter(c => c.status === 'missed').length;
+    const noAnswerCalls = calls.filter(c => c.status === 'no_answer').length;
+    const failedCalls = calls.filter(c => c.status === 'failed').length;
     const scheduledCalls = calls.filter(c => c.status === 'scheduled').length;
     
     console.log('\n📊 Statistiques:');
     console.log(`   - Appels terminés: ${completedCalls}`);
-    console.log(`   - Appels manqués: ${missedCalls}`);
+    console.log(`   - Sans réponse: ${noAnswerCalls}`);
+    console.log(`   - Échecs: ${failedCalls}`);
     console.log(`   - Appels programmés: ${scheduledCalls}`);
     
   } catch (error) {

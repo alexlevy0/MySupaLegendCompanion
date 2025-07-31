@@ -59,7 +59,9 @@ export const CallHistoryModal: React.FC<CallHistoryModalProps> = ({
     switch (status) {
       case 'completed':
         return '✅';
-      case 'missed':
+      case 'no_answer':
+        return '📵';
+      case 'failed':
         return '❌';
       case 'scheduled':
         return '🕒';
@@ -100,8 +102,10 @@ export const CallHistoryModal: React.FC<CallHistoryModalProps> = ({
     switch (status) {
       case 'completed':
         return 'Terminé';
-      case 'missed':
-        return 'Manqué';
+      case 'no_answer':
+        return 'Sans réponse';
+      case 'failed':
+        return 'Échec';
       case 'scheduled':
         return 'Programmé';
       case 'in_progress':

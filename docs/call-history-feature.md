@@ -21,7 +21,12 @@ Pour chaque appel, les informations suivantes sont disponibles :
   - 📅 Programmé : Appel régulier planifié
   - 🚨 Urgence : Appel d'urgence
   - 🔄 Suivi : Appel de suivi médical ou autre
-- **Statut** : Terminé ✅, Manqué ❌, Programmé 🕒, En cours 📞
+- **Statut** : 
+  - ✅ Terminé : Appel réussi et complété
+  - 📵 Sans réponse : Le senior n'a pas décroché
+  - ❌ Échec : Problème technique ou autre échec
+  - 🕒 Programmé : Appel planifié pour le futur
+  - 📞 En cours : Appel actuellement en cours
 - **Durée** de l'appel (format: Xm Ys)
 
 ### Informations détaillées
@@ -63,7 +68,7 @@ Cette commande génère entre 5 et 10 appels aléatoires pour chaque senior exis
   - 70% d'appels programmés (réguliers)
   - 20% d'appels de suivi
   - 10% d'appels d'urgence
-- Des statuts variés (complété, manqué, programmé)
+- Des statuts variés (complété, sans réponse, échec, programmé)
 - Des durées entre 2 et 20 minutes
 - Des humeurs et scores de qualité aléatoires
 - Des résumés de conversation adaptés au type d'appel
