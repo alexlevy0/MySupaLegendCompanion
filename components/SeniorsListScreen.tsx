@@ -75,6 +75,7 @@ export default function SeniorsListScreen() {
   const [showJoinFamily, setShowJoinFamily] = useState(false);
   const [showCallHistory, setShowCallHistory] = useState(false);
   const [selectedSenior, setSelectedSenior] = useState<Senior | null>(null);
+  const [selectedSeniorForCalls, setSelectedSeniorForCalls] = useState<any | null>(null);
 
   // États pour les statistiques
   const [seniorStats, setSeniorStats] = useState<Record<string, SeniorStats>>(
@@ -252,7 +253,7 @@ export default function SeniorsListScreen() {
         onPress: () => {
           // Passer le senior complet avec le bon ID
           const seniorData = senior.seniors || senior;
-          setSelectedSenior(seniorData);
+          setSelectedSeniorForCalls(seniorData);
           setShowCallHistory(true);
         },
       },
@@ -475,7 +476,7 @@ export default function SeniorsListScreen() {
       >
         {selectedSenior && (
           <EditSeniorForm
-            seniorId={selectedSenior.seniors.id}
+            seniorId={selectedSenior.seniors?.id || selectedSenior.id}
             onSuccess={handleEditSeniorSuccess}
             onCancel={handleCloseEditSenior}
           />
@@ -539,11 +540,14 @@ export default function SeniorsListScreen() {
       </Modal>
 
       {/* Modal - Historique des appels */}
-      {selectedSenior && (
+      {selectedSeniorForCalls && (
         <CallHistoryModal
           visible={showCallHistory}
-          onClose={() => setShowCallHistory(false)}
-          senior={selectedSenior}
+          onClose={() => {
+            setShowCallHistory(false);
+            setSelectedSeniorForCalls(null);
+          }}
+          senior={selectedSeniorForCalls}
         />
       )}
     </SafeAreaView>
