@@ -1,33 +1,39 @@
 import ProfileEdit from "@/components/ProfileEdit";
 import UserProfile from "@/components/UserProfile";
 import { useMyCompanionAuth } from "@/utils/SupaLegend";
-import React, { useState } from "react";
-import {
-    ActivityIndicator,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-    Animated,
-    Dimensions,
-} from "react-native";
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Animated,
+  Dimensions,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 const { width, height } = Dimensions.get('window');
 
 export default function ProfileScreen() {
   const { userProfile, loading } = useMyCompanionAuth();
   const [isEditing, setIsEditing] = useState(false);
-  const fadeAnim = new Animated.Value(0);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
   React.useEffect(() => {
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 800,
-      useNativeDriver: true,
-    }).start();
-  }, []);
+    if (!loading && userProfile) {
+      // Reset animation to 0 first
+      fadeAnim.setValue(0);
+      
+      // Start the animation
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [loading, userProfile, fadeAnim]);
 
   if (loading) {
     return (
@@ -77,7 +83,7 @@ export default function ProfileScreen() {
   }
 
   return (
-    <View style={styles.fullContainer}>
+    <View style={[styles.fullContainer, { borderWidth: 1, borderColor: 'red', borderStyle: 'solid' }]}>
       <LinearGradient
         colors={['#6366f1', '#8b5cf6', '#a855f7']}
         style={styles.headerGradient}
