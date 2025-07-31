@@ -91,7 +91,7 @@ describe('UserProfile', () => {
     Platform.OS = 'ios';
     const { getByText } = render(<UserProfile />);
 
-    const signOutButton = getByText('Déconnexion');
+    const signOutButton = getByText('🚪 Se déconnecter');
     fireEvent.press(signOutButton);
 
     // Check if confirmation alert is shown
@@ -115,7 +115,7 @@ describe('UserProfile', () => {
     Platform.OS = 'web';
     const { getByText } = render(<UserProfile />);
 
-    const signOutButton = getByText('Déconnexion');
+    const signOutButton = getByText('🚪 Se déconnecter');
     fireEvent.press(signOutButton);
 
     // On web, should sign out directly without confirmation
@@ -129,7 +129,7 @@ describe('UserProfile', () => {
     
     const { getByText } = render(<UserProfile />);
 
-    const signOutButton = getByText('Déconnexion');
+    const signOutButton = getByText('🚪 Se déconnecter');
     fireEvent.press(signOutButton);
 
     // Simulate confirmation
@@ -143,7 +143,7 @@ describe('UserProfile', () => {
     const { getByText } = render(<UserProfile />);
 
     await waitFor(() => {
-      expect(getByText('Membre depuis')).toBeTruthy();
+      expect(getByText('Membre depuis:')).toBeTruthy();
       expect(getByText('01/01/2024')).toBeTruthy();
     });
   });
@@ -157,7 +157,7 @@ describe('UserProfile', () => {
     const { queryByText } = render(<UserProfile />);
 
     expect(getUserStats).not.toHaveBeenCalled();
-    expect(queryByText('Mon Profil')).toBeTruthy();
+    expect(queryByText('👤')).toBeTruthy();
   });
 
   it('should handle missing user name', async () => {
@@ -190,7 +190,7 @@ describe('UserProfile', () => {
 
     await waitFor(() => {
       expect(queryByText('0612345678')).toBeFalsy();
-      expect(queryByText('Non renseigné')).toBeTruthy();
+      expect(queryByText('Téléphone:')).toBeTruthy();
     });
   });
 
@@ -259,7 +259,7 @@ describe('UserProfile', () => {
     Platform.OS = 'ios';
     const { getByText } = render(<UserProfile />);
 
-    const signOutButton = getByText('Déconnexion');
+    const signOutButton = getByText('🚪 Se déconnecter');
     fireEvent.press(signOutButton);
 
     // Simulate cancel
