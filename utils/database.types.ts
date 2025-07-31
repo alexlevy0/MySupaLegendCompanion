@@ -17,8 +17,8 @@ export type Database = {
     Functions: {
       graphql: {
         Args: {
-          operationName?: string
           query?: string
+          operationName?: string
           variables?: Json
           extensions?: Json
         }
@@ -315,6 +315,142 @@ export type Database = {
           },
         ]
       }
+      family_invitations: {
+        Row: {
+          accepted_at: string | null
+          accepted_by: string | null
+          access_level: string | null
+          counter: number
+          created_at: string | null
+          deleted: boolean | null
+          email: string
+          expires_at: string
+          id: string
+          invitation_metadata: Json | null
+          inviter_id: string
+          notification_preferences: Json | null
+          relationship: string
+          senior_id: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          access_level?: string | null
+          counter?: number
+          created_at?: string | null
+          deleted?: boolean | null
+          email: string
+          expires_at: string
+          id?: string
+          invitation_metadata?: Json | null
+          inviter_id: string
+          notification_preferences?: Json | null
+          relationship: string
+          senior_id: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          access_level?: string | null
+          counter?: number
+          created_at?: string | null
+          deleted?: boolean | null
+          email?: string
+          expires_at?: string
+          id?: string
+          invitation_metadata?: Json | null
+          inviter_id?: string
+          notification_preferences?: Json | null
+          relationship?: string
+          senior_id?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_invitations_accepted_by_fkey"
+            columns: ["accepted_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "family_invitations_inviter_id_fkey"
+            columns: ["inviter_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "family_invitations_senior_id_fkey"
+            columns: ["senior_id"]
+            isOneToOne: false
+            referencedRelation: "seniors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      family_invite_codes: {
+        Row: {
+          code: string
+          created_at: string | null
+          created_by: string
+          current_uses: number | null
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          max_uses: number | null
+          senior_id: string
+          updated_at: string | null
+          usage_history: Json | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          created_by: string
+          current_uses?: number | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          senior_id: string
+          updated_at?: string | null
+          usage_history?: Json | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          created_by?: string
+          current_uses?: number | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          senior_id?: string
+          updated_at?: string | null
+          usage_history?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_invite_codes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "family_invite_codes_senior_id_fkey"
+            columns: ["senior_id"]
+            isOneToOne: false
+            referencedRelation: "seniors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       family_members: {
         Row: {
           access_level: string | null
@@ -563,10 +699,13 @@ export type Database = {
           created_at: string | null
           deleted: boolean | null
           emergency_contact: string | null
+          first_name: string
           id: string
           interests: Json | null
+          last_name: string
           medical_context: Json | null
           personality_profile: Json | null
+          phone: string | null
           preferred_call_time: string | null
           updated_at: string | null
           user_id: string | null
@@ -580,10 +719,13 @@ export type Database = {
           created_at?: string | null
           deleted?: boolean | null
           emergency_contact?: string | null
+          first_name: string
           id?: string
           interests?: Json | null
+          last_name: string
           medical_context?: Json | null
           personality_profile?: Json | null
+          phone?: string | null
           preferred_call_time?: string | null
           updated_at?: string | null
           user_id?: string | null
@@ -597,10 +739,13 @@ export type Database = {
           created_at?: string | null
           deleted?: boolean | null
           emergency_contact?: string | null
+          first_name?: string
           id?: string
           interests?: Json | null
+          last_name?: string
           medical_context?: Json | null
           personality_profile?: Json | null
+          phone?: string | null
           preferred_call_time?: string | null
           updated_at?: string | null
           user_id?: string | null
@@ -805,10 +950,97 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      active_family_codes: {
+        Row: {
+          code: string | null
+          created_at: string | null
+          created_by: string | null
+          created_by_name: string | null
+          current_uses: number | null
+          expires_at: string | null
+          id: string | null
+          is_active: boolean | null
+          max_uses: number | null
+          remaining_uses: number | null
+          senior_id: string | null
+          senior_name: string | null
+          status: string | null
+          updated_at: string | null
+          usage_history: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_invite_codes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "family_invite_codes_senior_id_fkey"
+            columns: ["senior_id"]
+            isOneToOne: false
+            referencedRelation: "seniors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
-      [_ in never]: never
+      check_user_accounts_status: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          auth_count: number
+          profile_count: number
+          missing_profiles: number
+          orphaned_profiles: number
+        }[]
+      }
+      cleanup_expired_codes: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      cleanup_expired_invitations: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      create_user_profile_rpc: {
+        Args: {
+          user_email?: string
+          user_type?: string
+          first_name?: string
+          last_name?: string
+        }
+        Returns: Json
+      }
+      generate_unique_family_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      get_current_user_profile: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      get_user_type: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      record_code_usage: {
+        Args: { p_code_id: string; p_user_id: string; p_relationship: string }
+        Returns: undefined
+      }
+      update_user_profile: {
+        Args: {
+          new_first_name?: string
+          new_last_name?: string
+          new_phone?: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
