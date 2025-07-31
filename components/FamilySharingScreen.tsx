@@ -411,6 +411,40 @@ export default function FamilySharingScreen({
             </Text>
           </View>
         </View>
+
+        {/* Section Rejoindre une autre famille */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="link-outline" size={24} color="#4f46e5" />
+            <Text style={styles.sectionTitle}>Rejoindre une autre famille</Text>
+          </View>
+          <Text style={styles.sectionDescription}>
+            Si vous avez reçu un code d'une autre famille, vous pouvez l'utiliser ici.
+          </Text>
+          
+          {showJoinSection ? (
+            <CodeInput onSubmit={handleJoinFamily} loading={joiningFamily} />
+          ) : (
+            <TouchableOpacity
+              style={styles.showJoinButton}
+              onPress={() => setShowJoinSection(true)}
+            >
+              <Ionicons name="add-circle-outline" size={20} color="#4f46e5" />
+              <Text style={styles.showJoinButtonText}>
+                Saisir un code famille
+              </Text>
+            </TouchableOpacity>
+          )}
+          
+          {showJoinSection && (
+            <TouchableOpacity
+              style={styles.cancelJoinButton}
+              onPress={() => setShowJoinSection(false)}
+            >
+              <Text style={styles.cancelJoinButtonText}>Annuler</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -624,5 +658,30 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#6b7280",
     lineHeight: 18,
+  },
+  showJoinButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#ede9fe",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    gap: 8,
+  },
+  showJoinButtonText: {
+    color: "#4f46e5",
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  cancelJoinButton: {
+    alignItems: "center",
+    paddingVertical: 12,
+    marginTop: 12,
+  },
+  cancelJoinButtonText: {
+    color: "#6b7280",
+    fontSize: 14,
+    fontWeight: "500",
   },
 });
