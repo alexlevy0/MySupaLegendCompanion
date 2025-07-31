@@ -20,7 +20,9 @@ import {
     View,
 } from "react-native";
 import CodeCard from "./CodeCard";
+import CodeInput from "./CodeInput";
 import { Ionicons } from "@expo/vector-icons";
+import { joinFamilyWithCode } from "@/utils/SupaLegend";
 
 interface FamilyMember {
   id: string;
@@ -59,6 +61,10 @@ export default function FamilySharingScreen({
   const [familyCode, setFamilyCode] = useState<string | null>(null);
   const [codeStatistics, setCodeStatistics] = useState<any>(null);
   const [generatingCode, setGeneratingCode] = useState(false);
+  
+  // État pour afficher/masquer la section rejoindre
+  const [showJoinSection, setShowJoinSection] = useState(false);
+  const [joiningFamily, setJoiningFamily] = useState(false);
 
   // Charger les membres de la famille
   const loadFamilyMembers = async () => {
@@ -180,6 +186,44 @@ export default function FamilySharingScreen({
         },
       ]
     );
+  };
+
+  // Rejoindre une famille avec un code
+  const handleJoinFamily = async (code: string, relationship: string) => {
+    try {
+      setJoiningFamily(true);
+      
+      const result = await joinFamilyWithCode(code, relationship);
+      
+      if (result.success && result.seniorInfo) {
+        Alert.alert(
+          "✅ Bienvenue dans la famille !",
+          `Vous avez maintenant accès aux informations de ${result.seniorInfo.first_name} ${result.seniorInfo.last_name}.`,
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                setShowJoinSection(false);
+                loadFamilyMembers();
+              },
+            },
+          ]
+        );
+      } else {
+        Alert.alert(
+          "❌ Code invalide",
+          result.error || "Le code saisi n'est pas valide ou a expiré.",
+          [{ text: "Réessayer" }]
+        );
+      }
+    } catch (error: any) {
+      Alert.alert(
+        "Erreur",
+        error.message || "Une erreur est survenue. Veuillez réessayer."
+      );
+    } finally {
+      setJoiningFamily(false);
+    }
   };
 
   // Helpers pour les labels
