@@ -10,6 +10,30 @@ import { authState$ } from "../auth/auth-state";
 export async function getSeniorCalls(seniorId: string) {
   try {
     console.log("📞 Loading calls for senior:", seniorId);
+    console.log("📏 Senior ID length:", seniorId?.length);
+    console.log("📏 Senior ID type:", typeof seniorId);
+
+    // Vérifier l'utilisateur actuel
+    const { data: { user } } = await supabase.auth.getUser();
+    console.log("👤 Current user:", user?.id, user?.email);
+
+    // D'abord, vérifier si ce senior existe
+    const { data: seniorExists, error: seniorError } = await supabase
+      .from("seniors")
+      .select("id, first_name, last_name")
+      .eq("id", seniorId)
+      .single();
+    
+    console.log("👴 Senior exists?", seniorExists ? `Yes: ${seniorExists.first_name} ${seniorExists.last_name}` : "No", "Error:", seniorError);
+
+    // Ensuite, chercher tous les appels pour voir les senior_ids
+    const { data: allCalls, error: allError } = await supabase
+      .from("calls")
+      .select("senior_id")
+      .eq("deleted", false)
+      .limit(5);
+    
+    console.log("🔍 Sample senior_ids from calls:", allCalls?.map(c => c.senior_id));
 
     const { data, error } = await supabase
       .from("calls")
@@ -18,7 +42,13 @@ export async function getSeniorCalls(seniorId: string) {
       .eq("deleted", false)
       .order("started_at", { ascending: false });
 
-    if (error) throw error;
+    console.log("📊 Query result - data:", data?.length || 0, "error:", error);
+    
+    if (error) {
+      console.error("❌ Supabase error details:", error.message, error.details, error.hint);
+      throw error;
+    }
+    
     return data || [];
   } catch (error) {
     console.error("❌ Failed to get senior calls:", error);

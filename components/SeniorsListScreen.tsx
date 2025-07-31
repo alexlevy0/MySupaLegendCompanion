@@ -16,6 +16,7 @@ import AddSeniorForm from "@/components/AddSeniorForm";
 import EditSeniorForm from "@/components/EditSeniorForm";
 import FamilySharingScreen from "@/components/FamilySharingScreen";
 import JoinFamilyScreen from "@/components/JoinFamilyScreen";
+import { CallHistoryModal } from "@/components/CallHistoryModal";
 import {
   deleteSenior,
   getSeniorStats,
@@ -72,7 +73,9 @@ export default function SeniorsListScreen() {
   const [showEditSenior, setShowEditSenior] = useState(false);
   const [showFamilySharing, setShowFamilySharing] = useState(false);
   const [showJoinFamily, setShowJoinFamily] = useState(false);
+  const [showCallHistory, setShowCallHistory] = useState(false);
   const [selectedSenior, setSelectedSenior] = useState<Senior | null>(null);
+  const [selectedSeniorForCalls, setSelectedSeniorForCalls] = useState<any | null>(null);
 
   // États pour les statistiques
   const [seniorStats, setSeniorStats] = useState<Record<string, SeniorStats>>(
@@ -247,7 +250,12 @@ export default function SeniorsListScreen() {
       },
       {
         text: "📞 Historique appels",
-        onPress: () => Alert.alert("Info", "Fonctionnalité en développement"),
+        onPress: () => {
+          // Passer le senior complet avec le bon ID
+          const seniorData = senior.seniors || senior;
+          setSelectedSeniorForCalls(seniorData);
+          setShowCallHistory(true);
+        },
       },
     ];
 
@@ -468,7 +476,7 @@ export default function SeniorsListScreen() {
       >
         {selectedSenior && (
           <EditSeniorForm
-            seniorId={selectedSenior.seniors.id}
+            seniorId={selectedSenior.seniors?.id || selectedSenior.id}
             onSuccess={handleEditSeniorSuccess}
             onCancel={handleCloseEditSenior}
           />
@@ -530,6 +538,18 @@ export default function SeniorsListScreen() {
           onBack={() => setShowJoinFamily(false)}
         />
       </Modal>
+
+      {/* Modal - Historique des appels */}
+      {selectedSeniorForCalls && (
+        <CallHistoryModal
+          visible={showCallHistory}
+          onClose={() => {
+            setShowCallHistory(false);
+            setSelectedSeniorForCalls(null);
+          }}
+          senior={selectedSeniorForCalls}
+        />
+      )}
     </SafeAreaView>
   );
 }
