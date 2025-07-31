@@ -1,7 +1,7 @@
 import {
-  DarkTheme,
-  DefaultTheme,
-  ThemeProvider,
+    DarkTheme,
+    DefaultTheme,
+    ThemeProvider,
 } from "@react-navigation/native";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
@@ -12,6 +12,7 @@ import { useEffect } from "react";
 
 import AuthWrapper from "@/components/auth/AuthWrapper";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import "@/utils/i18n"; // Initialiser i18n
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();

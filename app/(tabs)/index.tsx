@@ -6,7 +6,8 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity
+  TouchableOpacity,
+  View
 } from "react-native";
 
 import { HelloWave } from "@/components/HelloWave";
@@ -14,6 +15,7 @@ import ParallaxScrollView from "@/components/ParallaxScrollView";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import UserProfile from "@/components/UserProfile";
+import { useTranslation } from "@/hooks/useTranslation";
 
 import { todos$ as _todos$, addTodo, toggleDone } from "@/utils/SupaLegend";
 import { Database } from "@/utils/database.types";
@@ -24,6 +26,7 @@ const NOT_DONE_ICON = String.fromCodePoint(0x1f7e0);
 const DONE_ICON = String.fromCodePoint(0x2705);
 
 const NewTodo = () => {
+  const { t } = useTranslation();
   const [text, setText] = useState("");
   const handleSubmitEditing = ({
     nativeEvent: { text },
@@ -38,7 +41,7 @@ const NewTodo = () => {
       value={text}
       onChangeText={(text) => setText(text)}
       onSubmitEditing={handleSubmitEditing}
-      placeholder="What do you want to do today?"
+      placeholder={t('home.todoPlaceholder')}
       style={styles.input}
     />
   );
@@ -80,6 +83,7 @@ const Todos = observer(({ todos$ }: { todos$: typeof _todos$ }) => {
 
 // A button component to delete all the todos, only shows when there are some.
 const ClearTodos = observer(() => {
+  const { t } = useTranslation();
   const todos = _todos$.get();
 
   // Calculer le nombre de todos
@@ -97,17 +101,18 @@ const ClearTodos = observer(() => {
   // Afficher le bouton seulement s'il y a des todos
   return todosCount > 0 ? (
     <TouchableOpacity onPress={handlePress}>
-      <Text style={styles.clearTodos}>Clear all ({todosCount})</Text>
+      <Text style={styles.clearTodos}>{t('home.clearAll')} ({todosCount})</Text>
     </TouchableOpacity>
   ) : null;
 });
 
 // The main app.
 const App = observer(() => {
+  const { t } = useTranslation();
   return (
     <>
       <ThemedText type="title" style={styles.heading}>
-        MyCompanion Demo
+        {t('home.demoTitle')}
       </ThemedText>
       <NewTodo />
       <Todos todos$={_todos$} />
@@ -117,6 +122,7 @@ const App = observer(() => {
 });
 
 export default function HomeScreen() {
+  const { t } = useTranslation();
   return (
     <ParallaxScrollView
       headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
@@ -128,49 +134,49 @@ export default function HomeScreen() {
       }
     >
       <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome to MyCompanion!</ThemedText>
-        <HelloWave />
+        <ThemedText type="title" style={styles.welcomeTitle}>{t('home.welcome')}</ThemedText>
+        <View style={styles.helloWaveContainer}>
+          <HelloWave />
+        </View>
       </ThemedView>
 
       {/* Profil utilisateur connecté */}
       <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">👤 Votre Profil</ThemedText>
+        <ThemedText type="subtitle">{t('home.yourProfile')}</ThemedText>
         <UserProfile />
       </ThemedView>
 
       <ThemedView style={styles.stepContainer}>
         <ThemedText type="subtitle">
-          📝 Todo Demo (Legend-State + Supabase)
+          {t('home.todoDemo')}
         </ThemedText>
         <ThemedText>
-          Ceci est un exemple fonctionnel de synchronisation en temps réel avec
-          Supabase et Legend-State.
+          {t('home.todoDescription')}
         </ThemedText>
         <App />
       </ThemedView>
 
       <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">🚀 Prochaines étapes</ThemedText>
+        <ThemedText type="subtitle">{t('home.nextSteps')}</ThemedText>
         <ThemedText>
-          Maintenant que l'authentification fonctionne, vous pouvez commencer à
-          développer les fonctionnalités MyCompanion :
+          {t('home.nextStepsDescription')}
         </ThemedText>
         <ThemedText style={styles.bulletPoint}>
-          • Interface pour les seniors
+          {t('home.seniorInterface')}
         </ThemedText>
-        <ThemedText style={styles.bulletPoint}>• Dashboard famille</ThemedText>
+        <ThemedText style={styles.bulletPoint}>{t('home.familyDashboard')}</ThemedText>
         <ThemedText style={styles.bulletPoint}>
-          • Gestion des alertes
+          {t('home.alertsManagement')}
         </ThemedText>
         <ThemedText style={styles.bulletPoint}>
-          • Rapports d'activité
+          {t('home.activityReports')}
         </ThemedText>
       </ThemedView>
 
       <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">🛠️ Développement</ThemedText>
+        <ThemedText type="subtitle">{t('home.development')}</ThemedText>
         <ThemedText>
-          Utilisez les scripts npm pour gérer vos données :
+          {t('home.developmentDescription')}
         </ThemedText>
         <ThemedText style={styles.command}>npm run seed:demo</ThemedText>
         <ThemedText style={styles.command}>npm run health:check</ThemedText>
@@ -184,7 +190,16 @@ const styles = StyleSheet.create({
   titleContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 2,
+  },
+  helloWaveContainer: {
+    width: "20%",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  welcomeTitle: {
+    width: "80%",
+    fontSize: 30,
   },
   stepContainer: {
     gap: 8,

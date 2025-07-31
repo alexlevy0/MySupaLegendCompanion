@@ -1,36 +1,39 @@
 import { signInWithEmail } from "@/utils/SupaLegend";
 import React, { useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
+
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface LoginFormProps {
   onToggleMode: () => void;
 }
 
 export default function LoginForm({ onToggleMode }: LoginFormProps) {
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSignIn = async () => {
     if (!email || !password) {
-      Alert.alert("Erreur", "Veuillez remplir tous les champs");
+      Alert.alert(t('common.error'), t('auth.fillAllFieldsLogin'));
       return;
     }
 
     setLoading(true);
     try {
       await signInWithEmail(email, password);
-      Alert.alert("Succès", "Connexion réussie !");
+      Alert.alert(t('common.success'), t('auth.loginSuccess'));
     } catch (error: any) {
-      Alert.alert("Erreur de connexion", error.message);
+      Alert.alert(t('auth.loginError'), error.message);
     } finally {
       setLoading(false);
     }
@@ -52,17 +55,17 @@ export default function LoginForm({ onToggleMode }: LoginFormProps) {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>🤖 MyCompanion</Text>
-        <Text style={styles.subtitle}>Connexion</Text>
+        <Text style={styles.subtitle}>{t('auth.login')}</Text>
       </View>
 
       <View style={styles.form}>
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Email</Text>
+          <Text style={styles.label}>{t('auth.email')}</Text>
           <TextInput
             style={styles.input}
             value={email}
             onChangeText={setEmail}
-            placeholder="votre@email.com"
+            placeholder={t('auth.email')}
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
@@ -70,12 +73,12 @@ export default function LoginForm({ onToggleMode }: LoginFormProps) {
         </View>
 
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Mot de passe</Text>
+          <Text style={styles.label}>{t('auth.password')}</Text>
           <TextInput
             style={styles.input}
             value={password}
             onChangeText={setPassword}
-            placeholder="••••••••"
+            placeholder={t('auth.password')}
             secureTextEntry
             autoCapitalize="none"
           />
@@ -89,7 +92,7 @@ export default function LoginForm({ onToggleMode }: LoginFormProps) {
           {loading ? (
             <ActivityIndicator color="white" />
           ) : (
-            <Text style={styles.buttonText}>Se connecter</Text>
+            <Text style={styles.buttonText}>{t('auth.login')}</Text>
           )}
         </TouchableOpacity>
 
@@ -97,31 +100,31 @@ export default function LoginForm({ onToggleMode }: LoginFormProps) {
           style={[styles.button, styles.secondaryButton]}
           onPress={onToggleMode}
         >
-          <Text style={styles.secondaryButtonText}>Créer un compte</Text>
+          <Text style={styles.secondaryButtonText}>{t('auth.signup')}</Text>
         </TouchableOpacity>
       </View>
 
       {/* Comptes de démonstration */}
       <View style={styles.demoSection}>
-        <Text style={styles.demoTitle}>🎯 Comptes de démonstration :</Text>
+        <Text style={styles.demoTitle}>{t('auth.demoAccounts')}</Text>
         <View style={styles.demoButtons}>
           <TouchableOpacity
             style={styles.demoButton}
             onPress={() => fillDemoAccount("admin")}
           >
-            <Text style={styles.demoButtonText}>👑 Admin</Text>
+            <Text style={styles.demoButtonText}>{t('auth.userTypes.admin')}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.demoButton}
             onPress={() => fillDemoAccount("family")}
           >
-            <Text style={styles.demoButtonText}>👨‍👩‍👧‍👦 Famille</Text>
+            <Text style={styles.demoButtonText}>{t('auth.userTypes.family')}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.demoButton}
             onPress={() => fillDemoAccount("senior")}
           >
-            <Text style={styles.demoButtonText}>👴 Senior</Text>
+            <Text style={styles.demoButtonText}>{t('auth.userTypes.senior')}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.demoButton}

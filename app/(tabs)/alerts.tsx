@@ -1,4 +1,5 @@
 import AuthWrapper from "@/components/auth/AuthWrapper";
+import { useTranslation } from "@/hooks/useTranslation";
 import {
     acknowledgeAlert,
     alerts$,
@@ -51,6 +52,7 @@ interface AlertData {
 
 const AlertsScreen = observer(() => {
   const { userProfile, isFamily, isSAAD, isAdmin } = useMyCompanionAuth();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
 
   // Vérification des permissions
@@ -59,10 +61,9 @@ const AlertsScreen = observer(() => {
       <SafeAreaView style={styles.errorContainer}>
         <View style={styles.errorContent}>
           <Text style={styles.errorIcon}>🚫</Text>
-          <Text style={styles.errorTitle}>Accès non autorisé</Text>
+          <Text style={styles.errorTitle}>{t('alerts.unauthorizedAccess')}</Text>
           <Text style={styles.errorMessage}>
-            Seuls les familles, services d'aide et administrateurs peuvent
-            accéder aux alertes.
+            {t('alerts.unauthorizedMessage')}
           </Text>
         </View>
       </SafeAreaView>
@@ -78,7 +79,6 @@ const AlertsScreen = observer(() => {
   // Filtrer les alertes pertinentes pour l'utilisateur
   // TODO: Filtrer selon les seniors auxquels l'utilisateur a accès
   const filteredAlerts = alertsList
-    .filter((alert) => !alert.deleted)
     .sort(
       (a, b) =>
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -92,11 +92,11 @@ const AlertsScreen = observer(() => {
       setLoading(true);
       await acknowledgeAlert(alertId, userProfile.id);
       Alert.alert(
-        "✅ Accusé de réception",
-        "L'alerte a été marquée comme lue."
+        t('alerts.acknowledgeSuccess'),
+        t('alerts.acknowledgeMessage')
       );
     } catch (error: any) {
-      Alert.alert("Erreur", error.message || "Impossible de traiter l'alerte");
+      Alert.alert(t('common.error'), error.message || t('alerts.acknowledgeError'));
     } finally {
       setLoading(false);
     }
@@ -144,15 +144,15 @@ const AlertsScreen = observer(() => {
   const getStatusLabel = (status: string) => {
     switch (status) {
       case "new":
-        return "Nouvelle";
+        return t('alerts.status.new');
       case "acknowledged":
-        return "Vue";
+        return t('alerts.status.acknowledged');
       case "in_progress":
-        return "En cours";
+        return t('alerts.status.in_progress');
       case "resolved":
-        return "Résolue";
+        return t('alerts.status.resolved');
       case "false_positive":
-        return "Fausse alerte";
+        return t('alerts.status.false_positive');
       default:
         return status;
     }
@@ -167,11 +167,11 @@ const AlertsScreen = observer(() => {
     const diffInHours = Math.floor(diffInMinutes / 60);
     const diffInDays = Math.floor(diffInHours / 24);
 
-    if (diffInMinutes < 5) return "À l'instant";
-    if (diffInMinutes < 60) return `Il y a ${diffInMinutes} min`;
-    if (diffInHours < 24) return `Il y a ${diffInHours}h`;
+    if (diffInMinutes < 5) return t('alerts.timeAgo.now');
+    if (diffInMinutes < 60) return t('alerts.timeAgo.minutesAgo', { minutes: diffInMinutes });
+    if (diffInHours < 24) return t('alerts.timeAgo.hoursAgo', { hours: diffInHours });
     if (diffInDays < 7)
-      return `Il y a ${diffInDays} jour${diffInDays > 1 ? "s" : ""}`;
+      return t('alerts.timeAgo.daysAgo', { days: diffInDays });
 
     return date.toLocaleDateString("fr-FR", {
       day: "numeric",
@@ -228,7 +228,7 @@ const AlertsScreen = observer(() => {
       {/* Indicateurs détectés */}
       {item.detected_indicators && (
         <View style={styles.indicatorsSection}>
-          <Text style={styles.indicatorsTitle}>🔍 Indicateurs détectés :</Text>
+          <Text style={styles.indicatorsTitle}>{t('alerts.detectedIndicators')}</Text>
           <Text style={styles.indicatorsText}>
             {JSON.stringify(item.detected_indicators, null, 2)}
           </Text>
@@ -239,7 +239,7 @@ const AlertsScreen = observer(() => {
       {item.confidence_score && (
         <View style={styles.confidenceSection}>
           <Text style={styles.confidenceText}>
-            🎯 Confiance : {Math.round(item.confidence_score * 100)}%
+            {t('alerts.confidence', { percentage: Math.round(item.confidence_score * 100) })}
           </Text>
         </View>
       )}
@@ -256,7 +256,7 @@ const AlertsScreen = observer(() => {
               <ActivityIndicator size="small" color="white" />
             ) : (
               <Text style={styles.acknowledgeButtonText}>
-                ✓ Accuser réception
+                {t('alerts.acknowledgeButton')}
               </Text>
             )}
           </TouchableOpacity>
@@ -264,10 +264,10 @@ const AlertsScreen = observer(() => {
           <TouchableOpacity
             style={styles.detailsButton}
             onPress={() =>
-              Alert.alert("Détails", "Fonctionnalité en développement")
+              Alert.alert(t('common.error'), t('alerts.detailsPlaceholder'))
             }
           >
-            <Text style={styles.detailsButtonText}>👁️ Détails</Text>
+            <Text style={styles.detailsButtonText}>{t('alerts.detailsButton')}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -275,7 +275,7 @@ const AlertsScreen = observer(() => {
       {/* Informations de résolution */}
       {item.status === "resolved" && item.resolution_notes && (
         <View style={styles.resolutionSection}>
-          <Text style={styles.resolutionTitle}>✅ Résolution :</Text>
+          <Text style={styles.resolutionTitle}>{t('alerts.resolution')}</Text>
           <Text style={styles.resolutionText}>{item.resolution_notes}</Text>
         </View>
       )}
@@ -286,11 +286,9 @@ const AlertsScreen = observer(() => {
   const renderEmptyState = () => (
     <View style={styles.emptyContainer}>
       <Text style={styles.emptyIcon}>🎉</Text>
-      <Text style={styles.emptyTitle}>Aucune alerte</Text>
+      <Text style={styles.emptyTitle}>{t('alerts.noAlerts')}</Text>
       <Text style={styles.emptyMessage}>
-        Excellente nouvelle ! Il n'y a aucune alerte pour vos seniors.
-        MyCompanion veille et vous tiendra informé dès qu'il y aura quelque
-        chose à signaler.
+        {t('alerts.noAlertsMessage')}
       </Text>
     </View>
   );
@@ -309,16 +307,13 @@ const AlertsScreen = observer(() => {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerInfo}>
-            <Text style={styles.headerTitle}>🚨 Alertes</Text>
+            <Text style={styles.headerTitle}>{t('alerts.title')}</Text>
             <Text style={styles.headerSubtitle}>
-              {filteredAlerts.length} alerte
-              {filteredAlerts.length > 1 ? "s" : ""} au total
+              {t('alerts.totalAlerts', { count: filteredAlerts.length })}
               {newAlertsCount > 0 &&
-                ` • ${newAlertsCount} nouvelle${newAlertsCount > 1 ? "s" : ""}`}
+                ` • ${t('alerts.newAlerts', { count: newAlertsCount })}`}
               {criticalAlertsCount > 0 &&
-                ` • ${criticalAlertsCount} critique${
-                  criticalAlertsCount > 1 ? "s" : ""
-                }`}
+                ` • ${t('alerts.criticalAlerts', { count: criticalAlertsCount })}`}
             </Text>
           </View>
 

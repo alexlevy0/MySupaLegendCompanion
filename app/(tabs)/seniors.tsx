@@ -1,12 +1,14 @@
 // app/(tabs)/seniors.tsx
 import AuthWrapper from "@/components/auth/AuthWrapper";
 import SeniorsListScreen from "@/components/SeniorsListScreen";
+import { useTranslation } from "@/hooks/useTranslation";
 import { useMyCompanionAuth } from "@/utils/SupaLegend";
 import React from "react";
 import { SafeAreaView, StyleSheet, Text, View } from "react-native";
 
 export default function SeniorsTab() {
   const { userProfile, isFamily, isSAAD } = useMyCompanionAuth();
+  const { t } = useTranslation();
 
   // Vérification des permissions
   if (!isFamily && !isSAAD) {
@@ -14,10 +16,9 @@ export default function SeniorsTab() {
       <SafeAreaView style={styles.errorContainer}>
         <View style={styles.errorContent}>
           <Text style={styles.errorIcon}>🚫</Text>
-          <Text style={styles.errorTitle}>Accès non autorisé</Text>
+          <Text style={styles.errorTitle}>{t('seniors.unauthorizedAccess')}</Text>
           <Text style={styles.errorMessage}>
-            Seuls les membres de famille et les services d'aide à domicile
-            peuvent accéder à cette section.
+            {t('seniors.unauthorizedMessage')}
           </Text>
         </View>
       </SafeAreaView>

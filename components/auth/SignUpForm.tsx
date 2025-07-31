@@ -1,5 +1,4 @@
 import { UserType, signUpMyCompanionUser } from "@/utils/SupaLegend";
-import { Picker } from "@react-native-picker/picker";
 import React, { useState } from "react";
 import {
     ActivityIndicator,
@@ -13,11 +12,14 @@ import {
     View,
 } from "react-native";
 
+import { useTranslation } from "@/hooks/useTranslation";
+
 interface SignUpFormProps {
   onToggleMode: () => void;
 }
 
 export default function SignUpForm({ onToggleMode }: SignUpFormProps) {
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
@@ -28,14 +30,14 @@ export default function SignUpForm({ onToggleMode }: SignUpFormProps) {
 
   const handleSignUp = async () => {
     if (!email || !password || !firstName || !lastName) {
-      Alert.alert("Erreur", "Veuillez remplir tous les champs obligatoires");
+      Alert.alert(t('common.error'), t('auth.fillAllFields'));
       return;
     }
 
     if (password.length < 6) {
       Alert.alert(
-        "Erreur",
-        "Le mot de passe doit contenir au moins 6 caractères"
+        t('common.error'),
+        t('auth.passwordMinLength')
       );
       return;
     }
@@ -51,43 +53,43 @@ export default function SignUpForm({ onToggleMode }: SignUpFormProps) {
 
       if (!result.session) {
         Alert.alert(
-          "Vérification requise",
-          "Veuillez vérifier votre email pour confirmer votre compte !",
-          [{ text: "OK", onPress: onToggleMode }]
+          t('auth.verificationRequired'),
+          t('auth.checkEmail'),
+          [{ text: t('common.ok'), onPress: onToggleMode }]
         );
       } else {
         Alert.alert(
-          "Succès",
-          `Compte ${getUserTypeLabel(userType)} créé avec succès !`
+          t('common.success'),
+          `${t('auth.signupSuccess')} ${getUserTypeLabel(userType)} !`
         );
       }
     } catch (error: any) {
-      Alert.alert("Erreur d'inscription", error.message);
+      Alert.alert(t('auth.signupError'), error.message);
     } finally {
       setLoading(false);
     }
   };
 
   const getUserTypeLabel = (type: UserType) => {
-    const labels = {
-      admin: "👑 Administrateur",
-      senior: "👴 Senior",
-      family: "👨‍👩‍👧‍👦 Famille",
-      saad_admin: "🏢 Directeur SAAD",
-      saad_worker: "👩‍⚕️ Auxiliaire SAAD",
-      insurer: "🏛️ Assureur",
+    const labels: Record<UserType, string> = {
+      admin: t('auth.userTypes.admin'),
+      senior: t('auth.userTypes.senior'),
+      family: t('auth.userTypes.family'),
+      saad_admin: t('auth.userTypes.saad_admin'),
+      saad_worker: t('auth.userTypes.saad_worker'),
+      insurer: t('auth.userTypes.insurer'),
     };
     return labels[type];
   };
 
   const getUserTypeDescription = (type: UserType) => {
-    const descriptions = {
-      admin: "Accès complet à la plateforme",
-      senior: "Bénéficiaire des appels MyCompanion",
-      family: "Proche d'un senior, reçoit les rapports",
-      saad_admin: "Directeur d'un service d'aide à domicile",
-      saad_worker: "Auxiliaire de vie à domicile",
-      insurer: "Représentant d'une compagnie d'assurance",
+    const descriptions: Record<UserType, string> = {
+      admin: "Accès complet à toutes les fonctionnalités",
+      senior: "Interface simplifiée pour les bénéficiaires",
+      family: "Suivi des proches et gestion des alertes",
+      saad_admin: "Gestion des équipes et des services",
+      saad_worker: "Interface pour les auxiliaires de vie",
+      insurer: "Accès aux données pour les assureurs",
     };
     return descriptions[type];
   };
@@ -96,61 +98,47 @@ export default function SignUpForm({ onToggleMode }: SignUpFormProps) {
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.header}>
         <Text style={styles.title}>🤖 MyCompanion</Text>
-        <Text style={styles.subtitle}>Créer un compte</Text>
+        <Text style={styles.subtitle}>{t('auth.signup')}</Text>
       </View>
 
       <View style={styles.form}>
         {/* Type de compte */}
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Type de compte *</Text>
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={userType}
-              onValueChange={setUserType}
-              style={styles.picker}
-              mode="dropdown" // Force le mode dropdown sur Android
-              dropdownIconColor="#374151" // Couleur de l'icône dropdown
-            >
-              <Picker.Item
-                label={getUserTypeLabel("family")}
-                value="family"
-                color="#374151" // Couleur du texte
-              />
-              <Picker.Item
-                label={getUserTypeLabel("senior")}
-                value="senior"
-                color="#374151"
-              />
-              <Picker.Item
-                label={getUserTypeLabel("saad_admin")}
-                value="saad_admin"
-                color="#374151"
-              />
-              <Picker.Item
-                label={getUserTypeLabel("saad_worker")}
-                value="saad_worker"
-                color="#374151"
-              />
-              <Picker.Item
-                label={getUserTypeLabel("admin")}
-                value="admin"
-                color="#374151"
-              />
-            </Picker>
+          <Text style={styles.label}>{t('auth.userType')}</Text>
+          <View style={styles.userTypeButtons}>
+            {(["family", "senior", "admin", "saad_admin", "saad_worker", "insurer"] as UserType[]).map((type) => (
+              <TouchableOpacity
+                key={type}
+                style={[
+                  styles.userTypeButton,
+                  userType === type && styles.userTypeButtonActive,
+                ]}
+                onPress={() => setUserType(type)}
+              >
+                <Text
+                  style={[
+                    styles.userTypeButtonText,
+                    userType === type && styles.userTypeButtonTextActive,
+                  ]}
+                >
+                  {getUserTypeLabel(type)}
+                </Text>
+                <Text style={styles.userTypeDescription}>
+                  {getUserTypeDescription(type)}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </View>
-          <Text style={styles.typeDescription}>
-            {getUserTypeDescription(userType)}
-          </Text>
         </View>
 
         {/* Email */}
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Email *</Text>
+          <Text style={styles.label}>{t('auth.email')}</Text>
           <TextInput
             style={styles.input}
             value={email}
             onChangeText={setEmail}
-            placeholder="votre@email.com"
+            placeholder={t('auth.email')}
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
@@ -159,48 +147,49 @@ export default function SignUpForm({ onToggleMode }: SignUpFormProps) {
 
         {/* Mot de passe */}
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Mot de passe *</Text>
+          <Text style={styles.label}>{t('auth.password')}</Text>
           <TextInput
             style={styles.input}
             value={password}
             onChangeText={setPassword}
-            placeholder="••••••••"
+            placeholder={t('auth.password')}
             secureTextEntry
             autoCapitalize="none"
           />
-          <Text style={styles.hint}>Minimum 6 caractères</Text>
         </View>
 
         {/* Prénom */}
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Prénom *</Text>
+          <Text style={styles.label}>{t('auth.firstName')}</Text>
           <TextInput
             style={styles.input}
             value={firstName}
             onChangeText={setFirstName}
-            placeholder="Jean"
+            placeholder={t('auth.firstName')}
+            autoCapitalize="words"
           />
         </View>
 
         {/* Nom */}
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Nom *</Text>
+          <Text style={styles.label}>{t('auth.lastName')}</Text>
           <TextInput
             style={styles.input}
             value={lastName}
             onChangeText={setLastName}
-            placeholder="Dupont"
+            placeholder={t('auth.lastName')}
+            autoCapitalize="words"
           />
         </View>
 
         {/* Téléphone */}
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Téléphone</Text>
+          <Text style={styles.label}>{t('auth.phone')}</Text>
           <TextInput
             style={styles.input}
             value={phone}
             onChangeText={setPhone}
-            placeholder="+33 1 23 45 67 89"
+            placeholder={t('auth.phone')}
             keyboardType="phone-pad"
           />
         </View>
@@ -213,7 +202,7 @@ export default function SignUpForm({ onToggleMode }: SignUpFormProps) {
           {loading ? (
             <ActivityIndicator color="white" />
           ) : (
-            <Text style={styles.buttonText}>Créer le compte</Text>
+            <Text style={styles.buttonText}>{t('auth.signup')}</Text>
           )}
         </TouchableOpacity>
 
@@ -221,7 +210,7 @@ export default function SignUpForm({ onToggleMode }: SignUpFormProps) {
           style={[styles.button, styles.secondaryButton]}
           onPress={onToggleMode}
         >
-          <Text style={styles.secondaryButtonText}>J'ai déjà un compte</Text>
+          <Text style={styles.secondaryButtonText}>{t('auth.login')}</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -344,5 +333,37 @@ const styles = StyleSheet.create({
     color: "#4f46e5",
     fontSize: 16,
     fontWeight: "600",
+  },
+  userTypeButtons: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginTop: 10,
+  },
+  userTypeButton: {
+    alignItems: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: "#e5e7eb",
+    backgroundColor: "#f9fafb",
+  },
+  userTypeButtonActive: {
+    borderColor: "#4f46e5",
+    backgroundColor: "#4f46e5",
+  },
+  userTypeButtonText: {
+    color: "#374151",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  userTypeButtonTextActive: {
+    color: "white",
+  },
+  userTypeDescription: {
+    fontSize: 12,
+    color: "#6b7280",
+    textAlign: "center",
+    marginTop: 4,
   },
 });

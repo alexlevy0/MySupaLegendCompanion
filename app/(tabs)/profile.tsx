@@ -1,5 +1,7 @@
+import LanguageSelector from "@/components/LanguageSelector";
 import ProfileEdit from "@/components/ProfileEdit";
 import UserProfile from "@/components/UserProfile";
+import { useTranslation } from "@/hooks/useTranslation";
 import { useMyCompanionAuth } from "@/utils/SupaLegend";
 import React, { useState } from "react";
 import {
@@ -13,13 +15,14 @@ import {
 
 export default function ProfileScreen() {
   const { userProfile, loading } = useMyCompanionAuth();
+  const { t } = useTranslation();
   const [isEditing, setIsEditing] = useState(false);
 
   if (loading) {
     return (
       <SafeAreaView style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#4f46e5" />
-        <Text style={styles.loadingText}>Chargement...</Text>
+        <Text style={styles.loadingText}>{t('common.loading')}</Text>
       </SafeAreaView>
     );
   }
@@ -27,7 +30,7 @@ export default function ProfileScreen() {
   if (!userProfile) {
     return (
       <SafeAreaView style={styles.errorContainer}>
-        <Text style={styles.errorText}>Erreur de chargement du profil</Text>
+        <Text style={styles.errorText}>{t('profile.errorLoading')}</Text>
       </SafeAreaView>
     );
   }
@@ -43,17 +46,18 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>👤 Mon Profil</Text>
+        <Text style={styles.title}>👤 {t('tabs.profile')}</Text>
         <TouchableOpacity
           style={styles.editButton}
           onPress={() => setIsEditing(true)}
         >
-          <Text style={styles.editButtonText}>✏️ Éditer</Text>
+          <Text style={styles.editButtonText}>✏️ {t('common.edit')}</Text>
         </TouchableOpacity>
       </View>
       
       <View style={styles.content}>
         <UserProfile />
+        <LanguageSelector />
       </View>
     </SafeAreaView>
   );

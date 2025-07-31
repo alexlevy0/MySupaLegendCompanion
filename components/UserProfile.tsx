@@ -1,12 +1,13 @@
+import { useTranslation } from "@/hooks/useTranslation";
 import { getUserStats, signOut, useMyCompanionAuth } from "@/utils/SupaLegend";
 import React, { useEffect, useState } from "react";
 import {
-    Alert,
-    Platform,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 interface UserStats {
@@ -17,6 +18,7 @@ interface UserStats {
 export default function UserProfile() {
   const { userProfile, isAdmin, isSenior, isFamily, isSAAD } =
     useMyCompanionAuth();
+  const { t, isFrench } = useTranslation();
   const [stats, setStats] = useState<UserStats>({
     totalCalls: 0,
     totalAlerts: 0,
@@ -33,18 +35,18 @@ export default function UserProfile() {
       signOut();
     } else {
       Alert.alert(
-        "Déconnexion",
-        "Êtes-vous sûr de vouloir vous déconnecter ?",
+        t('userProfile.signOut'),
+        t('userProfile.signOutConfirm'),
         [
-          { text: "Annuler", style: "cancel" },
+          { text: t('userProfile.cancel'), style: "cancel" },
           {
-            text: "Déconnexion",
+            text: t('userProfile.signOutButton'),
             style: "destructive",
             onPress: async () => {
               try {
                 await signOut();
               } catch (error) {
-                Alert.alert("Erreur", "Impossible de se déconnecter");
+                Alert.alert(t('common.error'), t('userProfile.signOutError'));
               }
             },
           },
@@ -75,28 +77,28 @@ export default function UserProfile() {
   const getUserTypeLabel = () => {
     switch (userProfile?.user_type) {
       case "admin":
-        return "Administrateur";
+        return t('userProfile.userTypes.admin');
       case "senior":
-        return "Senior";
+        return t('userProfile.userTypes.senior');
       case "family":
-        return "Famille";
+        return t('userProfile.userTypes.family');
       case "saad_admin":
-        return "Directeur SAAD";
+        return t('userProfile.userTypes.saad_admin');
       case "saad_worker":
-        return "Auxiliaire SAAD";
+        return t('userProfile.userTypes.saad_worker');
       case "insurer":
-        return "Assureur";
+        return t('userProfile.userTypes.insurer');
       default:
-        return "Utilisateur";
+        return t('userProfile.userTypes.default');
     }
   };
 
   const getPermissions = () => {
     const permissions = [];
-    if (isAdmin) permissions.push("🔧 Administration complète");
-    if (isSenior) permissions.push("👴 Réception d'appels");
-    if (isFamily) permissions.push("📊 Rapports familiaux");
-    if (isSAAD) permissions.push("🏥 Gestion bénéficiaires");
+    if (isAdmin) permissions.push(t('userProfile.permissions.admin'));
+    if (isSenior) permissions.push(t('userProfile.permissions.senior'));
+    if (isFamily) permissions.push(t('userProfile.permissions.family'));
+    if (isSAAD) permissions.push(t('userProfile.permissions.saad'));
 
     return permissions;
   };
@@ -120,15 +122,15 @@ export default function UserProfile() {
         {/* Statistiques pour les seniors */}
         {isSenior && (
           <View style={styles.statsSection}>
-            <Text style={styles.statsTitle}>📊 Mes statistiques</Text>
+            <Text style={styles.statsTitle}>{t('userProfile.stats.title')}</Text>
             <View style={styles.statsRow}>
               <View style={styles.statItem}>
                 <Text style={styles.statNumber}>{stats.totalCalls}</Text>
-                <Text style={styles.statLabel}>Appels reçus</Text>
+                <Text style={styles.statLabel}>{t('userProfile.stats.callsReceived')}</Text>
               </View>
               <View style={styles.statItem}>
                 <Text style={styles.statNumber}>{stats.totalAlerts}</Text>
-                <Text style={styles.statLabel}>Alertes générées</Text>
+                <Text style={styles.statLabel}>{t('userProfile.stats.alertsGenerated')}</Text>
               </View>
             </View>
           </View>
@@ -136,29 +138,29 @@ export default function UserProfile() {
 
         <View style={styles.details}>
           <View style={styles.row}>
-            <Text style={styles.label}>Status:</Text>
+            <Text style={styles.label}>{t('userProfile.details.status')}</Text>
             <Text style={[styles.value, styles.active]}>
-              {userProfile.is_active ? "✅ Actif" : "❌ Inactif"}
+              {userProfile.is_active ? t('userProfile.details.active') : t('userProfile.details.inactive')}
             </Text>
           </View>
 
           <View style={styles.row}>
-            <Text style={styles.label}>Membre depuis:</Text>
+            <Text style={styles.label}>{t('userProfile.details.memberSince')}</Text>
             <Text style={styles.value}>
-              {new Date(userProfile.created_at).toLocaleDateString("fr-FR")}
+              {new Date(userProfile.created_at || '').toLocaleDateString(isFrench ? "fr-FR" : "en-US")}
             </Text>
           </View>
 
           {userProfile.phone && (
             <View style={styles.row}>
-              <Text style={styles.label}>Téléphone:</Text>
+              <Text style={styles.label}>{t('userProfile.details.phone')}</Text>
               <Text style={styles.value}>{userProfile.phone}</Text>
             </View>
           )}
         </View>
 
         <View style={styles.permissions}>
-          <Text style={styles.permissionsTitle}>🔐 Permissions:</Text>
+          <Text style={styles.permissionsTitle}>{t('userProfile.permissionsTitle')}</Text>
           {getPermissions().map((permission, index) => (
             <Text key={index} style={styles.permission}>
               {permission}
@@ -171,7 +173,7 @@ export default function UserProfile() {
             style={styles.signOutButton}
             onPress={handleSignOut}
           >
-            <Text style={styles.signOutText}>🚪 Se déconnecter</Text>
+            <Text style={styles.signOutText}>{t('userProfile.signOutButtonText')}</Text>
           </TouchableOpacity>
         </View>
       </View>

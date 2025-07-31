@@ -1,9 +1,9 @@
+import { useTranslation } from "@/hooks/useTranslation";
 import {
     changeEmail,
     changePassword,
     deleteUserAccount,
     sendPasswordResetEmail,
-    updateUserProfileNoAuth,
     useMyCompanionAuth,
     UserType
 } from "@/utils/SupaLegend";
@@ -27,6 +27,7 @@ interface ProfileEditProps {
 
 export default function ProfileEdit({ onClose }: ProfileEditProps) {
   const { userProfile, isAdmin, reloadProfile } = useMyCompanionAuth();
+  const { t } = useTranslation();
 
   // États pour l'édition
   const [isLoading, setIsLoading] = useState(false);
@@ -100,7 +101,7 @@ export default function ProfileEdit({ onClose }: ProfileEditProps) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#4f46e5" />
-        <Text style={styles.loadingText}>Chargement du profil...</Text>
+        <Text style={styles.loadingText}>{t('profile.loadingProfile')}</Text>
       </View>
     );
   }
@@ -119,14 +120,14 @@ export default function ProfileEdit({ onClose }: ProfileEditProps) {
       console.log("📝 Updating profile with:", updates);
 
     //   await updateUserProfile(updates);
-      await updateUserProfileNoAuth(updates); // 🔧 Fonction de test
+      await updateUserProfile(updates);
 
 
-      Alert.alert("Succès", "Profil mis à jour avec succès !");
+      Alert.alert(t('common.success'), t('profile.changesSaved'));
     reloadProfile?.();
     } catch (error: any) {
       console.error("❌ Profile update error:", error);
-      Alert.alert("Erreur", error.message);
+      Alert.alert(t('common.error'), error.message);
     } finally {
       setIsLoading(false);
     }
@@ -134,19 +135,19 @@ export default function ProfileEdit({ onClose }: ProfileEditProps) {
 
   const handleChangePassword = async () => {
     if (!currentPassword || !newPassword) {
-      Alert.alert("Erreur", "Veuillez remplir tous les champs");
+      Alert.alert(t('common.error'), t('profile.fillAllFields'));
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      Alert.alert("Erreur", "Les nouveaux mots de passe ne correspondent pas");
+      Alert.alert(t('common.error'), t('profile.passwordsDontMatchError'));
       return;
     }
 
     if (newPassword.length < 6) {
       Alert.alert(
-        "Erreur",
-        "Le nouveau mot de passe doit contenir au moins 6 caractères"
+        t('common.error'),
+        t('profile.passwordMinLengthError')
       );
       return;
     }
@@ -155,12 +156,12 @@ export default function ProfileEdit({ onClose }: ProfileEditProps) {
       setIsLoading(true);
       await changePassword({ currentPassword, newPassword });
 
-      Alert.alert("Succès", "Mot de passe modifié avec succès !");
+      Alert.alert(t('common.success'), t('profile.changesSaved'));
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
     } catch (error: any) {
-      Alert.alert("Erreur", error.message);
+      Alert.alert(t('common.error'), error.message);
     } finally {
       setIsLoading(false);
     }
@@ -168,14 +169,14 @@ export default function ProfileEdit({ onClose }: ProfileEditProps) {
 
   const handleChangeEmail = async () => {
     if (!newEmail || !emailPassword) {
-      Alert.alert("Erreur", "Veuillez remplir tous les champs");
+      Alert.alert(t('common.error'), t('profile.fillAllFields'));
       return;
     }
 
     // Validation email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(newEmail)) {
-      Alert.alert("Erreur", "Veuillez saisir une adresse email valide");
+      Alert.alert(t('common.error'), t('profile.invalidEmail'));
       return;
     }
 
@@ -184,13 +185,13 @@ export default function ProfileEdit({ onClose }: ProfileEditProps) {
       await changeEmail({ newEmail, password: emailPassword });
 
       Alert.alert(
-        "Email de confirmation envoyé",
-        "Vérifiez votre boîte mail pour confirmer le changement d'adresse email"
+        t('profile.emailConfirmationSent'),
+        t('profile.emailConfirmationMessage')
       );
       setNewEmail("");
       setEmailPassword("");
     } catch (error: any) {
-      Alert.alert("Erreur", error.message);
+      Alert.alert(t('common.error'), error.message);
     } finally {
       setIsLoading(false);
     }
@@ -202,11 +203,11 @@ export default function ProfileEdit({ onClose }: ProfileEditProps) {
       await sendPasswordResetEmail(userProfile.email);
 
       Alert.alert(
-        "Email envoyé",
-        "Un email de réinitialisation a été envoyé à votre adresse"
+        t('profile.emailSent'),
+        t('profile.resetEmailSent')
       );
     } catch (error: any) {
-      Alert.alert("Erreur", error.message);
+      Alert.alert(t('common.error'), error.message);
     } finally {
       setIsLoading(false);
     }
@@ -214,28 +215,28 @@ export default function ProfileEdit({ onClose }: ProfileEditProps) {
 
   const handleDeleteAccount = async () => {
     if (!deletePassword) {
-      Alert.alert("Erreur", "Veuillez saisir votre mot de passe");
+      Alert.alert(t('common.error'), t('profile.enterPassword'));
       return;
     }
 
     Alert.alert(
-      "⚠️ Supprimer le compte",
-      "Cette action est irréversible. Êtes-vous absolument sûr ?",
+      t('profile.deleteAccountConfirm'),
+      t('profile.deleteAccountConfirmMessage'),
       [
-        { text: "Annuler", style: "cancel" },
+        { text: t('profile.cancel'), style: "cancel" },
         {
-          text: "Supprimer",
+          text: t('profile.delete'),
           style: "destructive",
           onPress: async () => {
             try {
               setIsLoading(true);
               await deleteUserAccount(deletePassword);
               Alert.alert(
-                "Compte supprimé",
-                "Votre compte a été supprimé avec succès"
+                t('profile.accountDeleted'),
+                t('profile.accountDeletedMessage')
               );
             } catch (error: any) {
-              Alert.alert("Erreur", error.message);
+              Alert.alert(t('common.error'), error.message);
             } finally {
               setIsLoading(false);
             }
@@ -262,9 +263,9 @@ export default function ProfileEdit({ onClose }: ProfileEditProps) {
       // Ici vous pourriez faire un appel API pour sauvegarder les préférences
       // await updateUserPreferences({ emailNotifications, smsNotifications });
 
-      Alert.alert("Succès", "Préférences sauvegardées !");
+      Alert.alert(t('common.success'), t('profile.preferencesSaved'));
     } catch (error: any) {
-      Alert.alert("Erreur", error.message);
+      Alert.alert(t('common.error'), error.message);
     } finally {
       setIsLoading(false);
     }
@@ -303,7 +304,7 @@ export default function ProfileEdit({ onClose }: ProfileEditProps) {
 
   const renderProfileSection = () => (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>👤 Informations personnelles</Text>
+      <Text style={styles.sectionTitle}>{t('profile.personalInfo')}</Text>
 
       {/* 🔧 Bouton pour réinitialiser les valeurs */}
       {hasProfileChanges() && (
@@ -312,104 +313,103 @@ export default function ProfileEdit({ onClose }: ProfileEditProps) {
           onPress={resetToOriginalValues}
         >
           <Text style={styles.resetButtonText}>
-            🔄 Réinitialiser les valeurs
+            {t('profile.resetValues')}
           </Text>
         </TouchableOpacity>
       )}
 
       <View style={styles.inputContainer}>
-        <Text style={styles.label}>Prénom *</Text>
+        <Text style={styles.label}>{t('profile.firstNameRequired')}</Text>
         <TextInput
           style={styles.input}
           value={firstName}
           onChangeText={setFirstName}
-          placeholder="Votre prénom"
+          placeholder={t('profile.firstNamePlaceholder')}
         />
       </View>
 
       <View style={styles.inputContainer}>
-        <Text style={styles.label}>Nom *</Text>
+        <Text style={styles.label}>{t('profile.lastNameRequired')}</Text>
         <TextInput
           style={styles.input}
           value={lastName}
           onChangeText={setLastName}
-          placeholder="Votre nom"
+          placeholder={t('profile.lastNamePlaceholder')}
         />
       </View>
 
       <View style={styles.inputContainer}>
-        <Text style={styles.label}>Téléphone</Text>
+        <Text style={styles.label}>{t('profile.phone')}</Text>
         <TextInput
           style={styles.input}
           value={phone}
           onChangeText={setPhone}
-          placeholder="+33 1 23 45 67 89"
+          placeholder={t('profile.phonePlaceholder')}
           keyboardType="phone-pad"
         />
         <Text style={styles.hint}>
-          Le téléphone est utilisé pour les notifications SMS et les appels
-          d'urgence
+          {t('profile.phoneHint')}
         </Text>
       </View>
 
       <View style={styles.inputContainer}>
-        <Text style={styles.label}>Email (actuel)</Text>
+        <Text style={styles.label}>{t('profile.currentEmail')}</Text>
         <TextInput
           style={[styles.input, styles.disabledInput]}
           value={userProfile.email}
           editable={false}
         />
         <Text style={styles.hint}>
-          Utilisez la section Sécurité pour changer votre email
+          {t('profile.emailChangeHint')}
         </Text>
       </View>
 
       {isAdmin && (
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Type de compte</Text>
+          <Text style={styles.label}>{t('profile.accountType')}</Text>
           <View style={styles.pickerContainer}>
             <Picker
               selectedValue={userType}
               onValueChange={setUserType}
               style={styles.picker}
             >
-              <Picker.Item label="👨‍👩‍👧‍👦 Famille" value="family" />
-              <Picker.Item label="👴 Senior" value="senior" />
-              <Picker.Item label="🏢 Directeur SAAD" value="saad_admin" />
-              <Picker.Item label="👩‍⚕️ Auxiliaire SAAD" value="saad_worker" />
-              <Picker.Item label="👑 Administrateur" value="admin" />
-              <Picker.Item label="🏛️ Assureur" value="insurer" />
+              <Picker.Item label={t('auth.userTypes.family')} value="family" />
+              <Picker.Item label={t('auth.userTypes.senior')} value="senior" />
+              <Picker.Item label={t('auth.userTypes.saad_admin')} value="saad_admin" />
+              <Picker.Item label={t('auth.userTypes.saad_worker')} value="saad_worker" />
+              <Picker.Item label={t('auth.userTypes.admin')} value="admin" />
+              <Picker.Item label={t('auth.userTypes.insurer')} value="insurer" />
             </Picker>
           </View>
           <Text style={styles.hint}>
-            ⚠️ Changer le type de compte peut affecter les permissions d'accès
+            {t('profile.accountTypeWarning')}
           </Text>
         </View>
       )}
 
       {/* 🔧 Informations de statut */}
       <View style={styles.statusInfo}>
-        <Text style={styles.statusTitle}>📊 Informations du compte</Text>
+        <Text style={styles.statusTitle}>{t('profile.accountInfo')}</Text>
         <Text style={styles.statusItem}>
-          🔑 ID:{" "}
+          {t('profile.accountId')}{" "}
           <Text style={styles.statusValue}>
             {userProfile.id.slice(0, 8)}...
           </Text>
         </Text>
         <Text style={styles.statusItem}>
-          📅 Créé le:{" "}
+          {t('profile.createdOn')}{" "}
           <Text style={styles.statusValue}>
-            {new Date(userProfile.created_at).toLocaleDateString("fr-FR")}
+            {new Date(userProfile.created_at || '').toLocaleDateString("fr-FR")}
           </Text>
         </Text>
         <Text style={styles.statusItem}>
-          🔄 Modifié le:{" "}
+          {t('profile.modifiedOn')}{" "}
           <Text style={styles.statusValue}>
-            {new Date(userProfile.updated_at).toLocaleDateString("fr-FR")}
+            {new Date(userProfile.updated_at || '').toLocaleDateString("fr-FR")}
           </Text>
         </Text>
         <Text style={styles.statusItem}>
-          ✅ Status:{" "}
+          {t('profile.status')}{" "}
           <Text
             style={[
               styles.statusValue,
@@ -418,7 +418,7 @@ export default function ProfileEdit({ onClose }: ProfileEditProps) {
                 : styles.inactiveStatus,
             ]}
           >
-            {userProfile.is_active ? "Actif" : "Inactif"}
+            {userProfile.is_active ? t('profile.active') : t('profile.inactive')}
           </Text>
         </Text>
       </View>
@@ -437,8 +437,8 @@ export default function ProfileEdit({ onClose }: ProfileEditProps) {
         ) : (
           <Text style={styles.buttonText}>
             {hasProfileChanges()
-              ? "💾 Sauvegarder les modifications"
-              : "✅ Aucune modification"}
+              ? t('profile.saveChanges')
+              : t('profile.noChanges')}
           </Text>
         )}
       </TouchableOpacity>
@@ -447,14 +447,14 @@ export default function ProfileEdit({ onClose }: ProfileEditProps) {
 
   const renderSecuritySection = () => (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>🔒 Sécurité</Text>
+      <Text style={styles.sectionTitle}>{t('profile.security')}</Text>
 
       {/* Changement de mot de passe */}
       <View style={styles.subsection}>
-        <Text style={styles.subsectionTitle}>Changer le mot de passe</Text>
+        <Text style={styles.subsectionTitle}>{t('profile.changePassword')}</Text>
 
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Mot de passe actuel</Text>
+          <Text style={styles.label}>{t('profile.currentPassword')}</Text>
           <TextInput
             style={styles.input}
             value={currentPassword}
@@ -465,7 +465,7 @@ export default function ProfileEdit({ onClose }: ProfileEditProps) {
         </View>
 
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Nouveau mot de passe</Text>
+          <Text style={styles.label}>{t('profile.newPassword')}</Text>
           <TextInput
             style={styles.input}
             value={newPassword}
@@ -473,11 +473,11 @@ export default function ProfileEdit({ onClose }: ProfileEditProps) {
             placeholder="••••••••"
             secureTextEntry
           />
-          <Text style={styles.hint}>Minimum 6 caractères</Text>
+          <Text style={styles.hint}>{t('profile.passwordMinLength')}</Text>
         </View>
 
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Confirmer le nouveau mot de passe</Text>
+          <Text style={styles.label}>{t('profile.confirmNewPassword')}</Text>
           <TextInput
             style={styles.input}
             value={confirmPassword}
@@ -489,14 +489,14 @@ export default function ProfileEdit({ onClose }: ProfileEditProps) {
             confirmPassword &&
             newPassword !== confirmPassword && (
               <Text style={styles.errorHint}>
-                ❌ Les mots de passe ne correspondent pas
+                {t('profile.passwordsDontMatch')}
               </Text>
             )}
           {newPassword &&
             confirmPassword &&
             newPassword === confirmPassword && (
               <Text style={styles.successHint}>
-                ✅ Les mots de passe correspondent
+                {t('profile.passwordsMatch')}
               </Text>
             )}
         </View>
@@ -507,33 +507,33 @@ export default function ProfileEdit({ onClose }: ProfileEditProps) {
           disabled={isLoading}
         >
           <Text style={styles.secondaryButtonText}>
-            🔑 Changer le mot de passe
+            {t('profile.changePasswordButton')}
           </Text>
         </TouchableOpacity>
       </View>
 
       {/* Changement d'email */}
       <View style={styles.subsection}>
-        <Text style={styles.subsectionTitle}>Changer l'adresse email</Text>
+        <Text style={styles.subsectionTitle}>{t('profile.changeEmail')}</Text>
         <Text style={styles.hint}>
-          📧 Email actuel:{" "}
+          {t('profile.currentEmailLabel')}{" "}
           <Text style={styles.currentEmail}>{userProfile.email}</Text>
         </Text>
 
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Nouvelle adresse email</Text>
+          <Text style={styles.label}>{t('profile.newEmail')}</Text>
           <TextInput
             style={styles.input}
             value={newEmail}
             onChangeText={setNewEmail}
-            placeholder="nouvelle@email.com"
+            placeholder={t('profile.newEmailPlaceholder')}
             keyboardType="email-address"
             autoCapitalize="none"
           />
         </View>
 
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Mot de passe (confirmation)</Text>
+          <Text style={styles.label}>{t('profile.emailPassword')}</Text>
           <TextInput
             style={styles.input}
             value={emailPassword}
@@ -548,15 +548,15 @@ export default function ProfileEdit({ onClose }: ProfileEditProps) {
           onPress={handleChangeEmail}
           disabled={isLoading}
         >
-          <Text style={styles.secondaryButtonText}>📧 Changer l'email</Text>
+          <Text style={styles.secondaryButtonText}>{t('profile.changeEmailButton')}</Text>
         </TouchableOpacity>
       </View>
 
       {/* Reset password */}
       <View style={styles.subsection}>
-        <Text style={styles.subsectionTitle}>Mot de passe oublié</Text>
+        <Text style={styles.subsectionTitle}>{t('profile.forgotPassword')}</Text>
         <Text style={styles.hint}>
-          Recevoir un email pour réinitialiser votre mot de passe
+          {t('profile.forgotPasswordHint')}
         </Text>
 
         <TouchableOpacity
@@ -564,7 +564,7 @@ export default function ProfileEdit({ onClose }: ProfileEditProps) {
           onPress={handlePasswordReset}
           disabled={isLoading}
         >
-          <Text style={styles.buttonText}>🔄 Envoyer l'email de reset</Text>
+          <Text style={styles.buttonText}>{t('profile.sendResetEmail')}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -572,13 +572,13 @@ export default function ProfileEdit({ onClose }: ProfileEditProps) {
 
   const renderPreferencesSection = () => (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>⚙️ Préférences</Text>
+      <Text style={styles.sectionTitle}>{t('profile.preferences')}</Text>
 
       <View style={styles.preferenceItem}>
         <View style={styles.preferenceText}>
-          <Text style={styles.preferenceTitle}>📧 Notifications par email</Text>
+          <Text style={styles.preferenceTitle}>{t('profile.emailNotifications')}</Text>
           <Text style={styles.preferenceDescription}>
-            Recevoir les rapports quotidiens et alertes par email
+            {t('profile.emailNotificationsDesc')}
           </Text>
         </View>
         <Switch
@@ -591,10 +591,10 @@ export default function ProfileEdit({ onClose }: ProfileEditProps) {
 
       <View style={styles.preferenceItem}>
         <View style={styles.preferenceText}>
-          <Text style={styles.preferenceTitle}>📱 Notifications SMS</Text>
+          <Text style={styles.preferenceTitle}>{t('profile.smsNotifications')}</Text>
           <Text style={styles.preferenceDescription}>
-            Recevoir les alertes urgentes par SMS
-            {!phone && " (Téléphone requis)"}
+            {t('profile.smsNotificationsDesc')}
+            {!phone && t('profile.phoneRequired')}
           </Text>
         </View>
         <Switch
@@ -608,8 +608,7 @@ export default function ProfileEdit({ onClose }: ProfileEditProps) {
 
       {!phone && (
         <Text style={styles.warningText}>
-          ⚠️ Ajoutez un numéro de téléphone dans votre profil pour activer les
-          notifications SMS
+          {t('profile.addPhoneWarning')}
         </Text>
       )}
 
@@ -621,7 +620,7 @@ export default function ProfileEdit({ onClose }: ProfileEditProps) {
         {isLoading ? (
           <ActivityIndicator color="white" />
         ) : (
-          <Text style={styles.buttonText}>💾 Sauvegarder les préférences</Text>
+          <Text style={styles.buttonText}>{t('profile.savePreferences')}</Text>
         )}
       </TouchableOpacity>
     </View>
@@ -629,31 +628,30 @@ export default function ProfileEdit({ onClose }: ProfileEditProps) {
 
   const renderDangerSection = () => (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>⚠️ Zone dangereuse</Text>
+      <Text style={styles.sectionTitle}>{t('profile.dangerZone')}</Text>
 
       <View style={styles.dangerZone}>
-        <Text style={styles.dangerTitle}>Supprimer le compte</Text>
+        <Text style={styles.dangerTitle}>{t('profile.deleteAccount')}</Text>
         <Text style={styles.dangerDescription}>
-          Cette action supprimera définitivement votre compte et toutes les
-          données associées. Cette action est irréversible.
+          {t('profile.deleteAccountDesc')}
         </Text>
 
         <View style={styles.dangerInfo}>
           <Text style={styles.dangerInfoTitle}>
-            🗑️ Données qui seront supprimées :
+            {t('profile.dataToDelete')}
           </Text>
-          <Text style={styles.dangerInfoItem}>• Votre profil utilisateur</Text>
+          <Text style={styles.dangerInfoItem}>{t('profile.userProfile')}</Text>
           <Text style={styles.dangerInfoItem}>
-            • Historique des appels (si applicable)
+            {t('profile.callHistory')}
           </Text>
           <Text style={styles.dangerInfoItem}>
-            • Alertes et rapports associés
+            {t('profile.alertsReports')}
           </Text>
-          <Text style={styles.dangerInfoItem}>• Toutes les préférences</Text>
+          <Text style={styles.dangerInfoItem}>{t('profile.allPreferences')}</Text>
         </View>
 
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Mot de passe (confirmation)</Text>
+          <Text style={styles.label}>{t('profile.deletePasswordConfirm')}</Text>
           <TextInput
             style={styles.input}
             value={deletePassword}
@@ -676,7 +674,7 @@ export default function ProfileEdit({ onClose }: ProfileEditProps) {
             <ActivityIndicator color="white" />
           ) : (
             <Text style={styles.buttonText}>
-              🗑️ Supprimer définitivement le compte
+              {t('profile.deleteAccountButton')}
             </Text>
           )}
         </TouchableOpacity>
@@ -703,7 +701,7 @@ export default function ProfileEdit({ onClose }: ProfileEditProps) {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>✏️ Éditer le profil</Text>
+        <Text style={styles.title}>{t('profile.editProfileTitle')}</Text>
         {onClose && (
           <TouchableOpacity style={styles.closeButton} onPress={onClose}>
             <Text style={styles.closeButtonText}>✕</Text>
@@ -717,10 +715,10 @@ export default function ProfileEdit({ onClose }: ProfileEditProps) {
         style={styles.tabsScrollContent}
         showsHorizontalScrollIndicator={false}
       >
-        {renderTabButton("profile", "Profil", "👤")}
-        {renderTabButton("security", "Sécurité", "🔒")}
-        {renderTabButton("preferences", "Préférences", "⚙️")}
-        {renderTabButton("danger", "Danger", "⚠️")}
+        {renderTabButton("profile", t('profile.profileTab'), "👤")}
+        {renderTabButton("security", t('profile.securityTab'), "🔒")}
+        {renderTabButton("preferences", t('profile.preferencesTab'), "⚙️")}
+        {renderTabButton("danger", t('profile.dangerTab'), "⚠️")}
       </ScrollView>
 
       {/* Content */}

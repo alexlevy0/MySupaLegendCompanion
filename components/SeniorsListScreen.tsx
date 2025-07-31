@@ -15,6 +15,7 @@ import {
 import AddSeniorForm from "@/components/AddSeniorForm";
 import EditSeniorForm from "@/components/EditSeniorForm";
 import FamilySharingScreen from "@/components/FamilySharingScreen";
+import { useTranslation } from "@/hooks/useTranslation";
 import {
     deleteSenior,
     getSeniorStats,
@@ -53,12 +54,13 @@ interface Senior {
 interface SeniorStats {
   totalCalls: number;
   totalAlerts: number;
-  lastWellBeingScore?: number;
-  lastMetricDate?: string;
+  lastWellBeingScore?: number | null;
+  lastMetricDate?: string | null;
 }
 
 export default function SeniorsListScreen() {
   const { userProfile, isFamily, isSAAD } = useMyCompanionAuth();
+  const { t } = useTranslation();
 
   // États principaux
   const [seniors, setSeniors] = useState<Senior[]>([]);
@@ -107,8 +109,8 @@ export default function SeniorsListScreen() {
     } catch (error) {
       console.error("❌ Failed to load seniors:", error);
       Alert.alert(
-        "Erreur",
-        "Impossible de charger la liste des seniors. Veuillez réessayer."
+        t('common.error'),
+        t('seniors.errorLoadingSeniors')
       );
     } finally {
       setLoading(false);
@@ -166,28 +168,31 @@ export default function SeniorsListScreen() {
   // Gérer la suppression d'un senior
   const handleDeleteSenior = (senior: Senior) => {
     Alert.alert(
-      "⚠️ Supprimer le profil",
-      `Êtes-vous sûr de vouloir supprimer le profil de ${senior.seniors.first_name} ${senior.seniors.last_name} ?\n\n⚠️ Cette action est irréversible et supprimera :\n• Toutes les conversations\n• Tous les rapports\n• Toutes les alertes\n• Tous les partages familiaux`,
+      t('seniors.deleteSeniorConfirm'),
+      t('seniors.deleteSeniorMessage', { 
+        firstName: senior.seniors.first_name, 
+        lastName: senior.seniors.last_name 
+      }),
       [
         {
-          text: "Annuler",
+          text: t('profile.cancel'),
           style: "cancel",
         },
         {
-          text: "Supprimer",
+          text: t('profile.delete'),
           style: "destructive",
           onPress: async () => {
             try {
               await deleteSenior(senior.seniors.id);
               Alert.alert(
-                "✅ Profil supprimé",
-                `Le profil de ${senior.seniors.first_name} a été supprimé avec succès.`
+                t('seniors.seniorDeleted'),
+                t('seniors.seniorDeletedMessage', { firstName: senior.seniors.first_name })
               );
               loadSeniors(); // Recharger la liste
             } catch (error: any) {
               Alert.alert(
-                "Erreur",
-                error.message || "Impossible de supprimer le profil."
+                t('common.error'),
+                error.message || t('seniors.errorDeletingSenior')
               );
             }
           },
@@ -220,50 +225,50 @@ export default function SeniorsListScreen() {
     const diffInMs = now.getTime() - activityDate.getTime();
     const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
 
-    if (diffInDays === 0) return "Aujourd'hui";
-    if (diffInDays === 1) return "Hier";
-    if (diffInDays < 7) return `Il y a ${diffInDays} jours`;
-    if (diffInDays < 30) return `Il y a ${Math.floor(diffInDays / 7)} semaines`;
-    return `Il y a ${Math.floor(diffInDays / 30)} mois`;
+    if (diffInDays === 0) return t('seniors.today');
+    if (diffInDays === 1) return t('seniors.yesterday');
+    if (diffInDays < 7) return t('seniors.daysAgo', { days: diffInDays });
+    if (diffInDays < 30) return t('seniors.weeksAgo', { weeks: Math.floor(diffInDays / 7) });
+    return t('seniors.monthsAgo', { months: Math.floor(diffInDays / 30) });
   };
 
   // Options contextuelles pour un senior
   const showSeniorOptions = (senior: Senior) => {
     const options = [
       {
-        text: "📊 Voir détails",
-        onPress: () => Alert.alert("Info", "Fonctionnalité en développement"),
+        text: t('seniors.viewDetails'),
+        onPress: () => Alert.alert(t('common.error'), t('seniors.featureInDevelopment')),
       },
       {
-        text: "✏️ Éditer",
+        text: t('seniors.editSenior'),
         onPress: () => handleEditSenior(senior),
       },
       {
-        text: "👨‍👩‍👧‍👦 Gérer famille",
+        text: t('seniors.manageFamily'),
         onPress: () => handleManageFamily(senior),
       },
       {
-        text: "📞 Historique appels",
-        onPress: () => Alert.alert("Info", "Fonctionnalité en développement"),
+        text: t('seniors.callHistory'),
+        onPress: () => Alert.alert(t('common.error'), t('seniors.callHistoryDev')),
       },
     ];
 
     // Ajouter l'option de suppression seulement pour le contact principal
     if (senior.is_primary_contact) {
       options.push({
-        text: "🗑️ Supprimer",
+        text: t('seniors.deleteSenior'),
         onPress: () => handleDeleteSenior(senior),
       });
     }
 
     options.push({
-      text: "Annuler",
+      text: t('profile.cancel'),
       onPress: () => {},
     });
 
     Alert.alert(
       `${senior.seniors.first_name} ${senior.seniors.last_name}`,
-      "Choisissez une action :",
+      t('seniors.seniorOptions'),
       options
     );
   };
@@ -293,15 +298,14 @@ export default function SeniorsListScreen() {
 
             <View style={styles.seniorDetails}>
               <Text style={styles.seniorDetail}>📞 {senior.phone}</Text>
-              {age && <Text style={styles.seniorDetail}>🎂 {age} ans</Text>}
+              {age && <Text style={styles.seniorDetail}>🎂 {t('seniors.yearsOld', { age })}</Text>}
               <Text style={styles.seniorDetail}>
-                ⏰ Appels à {senior.preferred_call_time} (
-                {senior.call_frequency}x/jour)
+                ⏰ {t('seniors.callsAt', { time: senior.preferred_call_time, frequency: senior.call_frequency })}
               </Text>
             </View>
 
             <Text style={styles.relationship}>
-              Votre {item.relationship} • Accès {item.access_level}
+              {t('seniors.yourRelationship', { relationship: item.relationship, accessLevel: item.access_level })}
             </Text>
           </View>
 
@@ -317,25 +321,25 @@ export default function SeniorsListScreen() {
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
             <Text style={styles.statNumber}>{stats.totalCalls}</Text>
-            <Text style={styles.statLabel}>Appels</Text>
+            <Text style={styles.statLabel}>{t('seniors.calls')}</Text>
           </View>
           <View style={styles.statItem}>
             <Text style={styles.statNumber}>{stats.totalAlerts}</Text>
-            <Text style={styles.statLabel}>Alertes</Text>
+            <Text style={styles.statLabel}>{t('seniors.alerts')}</Text>
           </View>
           {stats.lastWellBeingScore && (
             <View style={styles.statItem}>
               <Text style={styles.statNumber}>
                 {Math.round(stats.lastWellBeingScore * 100)}%
               </Text>
-              <Text style={styles.statLabel}>Bien-être</Text>
+              <Text style={styles.statLabel}>{t('seniors.wellbeing')}</Text>
             </View>
           )}
           <View style={styles.statItem}>
             <Text style={styles.statNumber}>
               {formatLastActivity(senior.created_at)}
             </Text>
-            <Text style={styles.statLabel}>Ajouté</Text>
+            <Text style={styles.statLabel}>{t('seniors.added')}</Text>
           </View>
         </View>
 
@@ -365,7 +369,7 @@ export default function SeniorsListScreen() {
             style={[styles.quickActionButton, styles.callsAction]}
             onPress={(e) => {
               e.stopPropagation();
-              Alert.alert("Info", "Historique des appels - En développement");
+              Alert.alert(t('common.error'), t('seniors.callHistoryDev'));
             }}
           >
             <Text style={styles.quickActionText}>📞</Text>
@@ -379,16 +383,15 @@ export default function SeniorsListScreen() {
   const renderEmptyState = () => (
     <View style={styles.emptyContainer}>
       <Text style={styles.emptyIcon}>👴</Text>
-      <Text style={styles.emptyTitle}>Aucun senior ajouté</Text>
+      <Text style={styles.emptyTitle}>{t('seniors.noSeniors')}</Text>
       <Text style={styles.emptyMessage}>
-        Commencez par ajouter un proche pour qu'MyCompanion puisse l'appeler
-        quotidiennement et veiller sur son bien-être.
+        {t('seniors.noSeniorsMessage')}
       </Text>
       <TouchableOpacity
         style={styles.emptyButton}
         onPress={() => setShowAddSenior(true)}
       >
-        <Text style={styles.emptyButtonText}>+ Ajouter mon premier senior</Text>
+        <Text style={styles.emptyButtonText}>{t('seniors.addFirstSenior')}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -398,7 +401,7 @@ export default function SeniorsListScreen() {
     return (
       <SafeAreaView style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#4f46e5" />
-        <Text style={styles.loadingText}>Chargement de vos seniors...</Text>
+        <Text style={styles.loadingText}>{t('seniors.loadingSeniors')}</Text>
       </SafeAreaView>
     );
   }
@@ -408,10 +411,9 @@ export default function SeniorsListScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerInfo}>
-          <Text style={styles.headerTitle}>👴 Mes Seniors</Text>
+          <Text style={styles.headerTitle}>{t('seniors.title')}</Text>
           <Text style={styles.headerSubtitle}>
-            {seniors.length} senior{seniors.length > 1 ? "s" : ""} sous votre
-            protection
+            {t('seniors.subtitle', { count: seniors.length })}
           </Text>
         </View>
 
@@ -419,7 +421,7 @@ export default function SeniorsListScreen() {
           style={styles.addButton}
           onPress={() => setShowAddSenior(true)}
         >
-          <Text style={styles.addButtonText}>+ Ajouter</Text>
+          <Text style={styles.addButtonText}>{t('seniors.addButton')}</Text>
         </TouchableOpacity>
       </View>
 
