@@ -229,13 +229,17 @@ export async function getFamilyCode(seniorId: string): Promise<string | null> {
       .eq("senior_id", seniorId)
       .eq("is_active", true)
       .gte("expires_at", new Date().toISOString())
-      .filter("current_uses", "lt", "max_uses")
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
 
     if (error) {
       throw error;
+    }
+
+    // Vérifier que le code n'a pas atteint sa limite d'utilisation
+    if (codeData && codeData.current_uses >= codeData.max_uses) {
+      return null;
     }
 
     return codeData?.code || null;
