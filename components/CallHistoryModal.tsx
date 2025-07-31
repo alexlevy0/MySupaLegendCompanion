@@ -1,19 +1,18 @@
-import React, { useEffect, useState } from 'react';
-import {
-  Modal,
-  View,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  ActivityIndicator,
-  Alert,
-} from 'react-native';
-import { ThemedText } from './ThemedText';
-import { ThemedView } from './ThemedView';
-import { getSeniorCalls } from '../utils/supabase/services/call-service';
-import { Call, Senior } from '../utils/supabase/types';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Modal,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { getSeniorCalls } from '../utils/supabase/services/call-service';
+import { Call, Senior } from '../utils/supabase/types';
+import { ThemedText } from './ThemedText';
 
 interface CallHistoryModalProps {
   visible: boolean;
@@ -296,6 +295,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
+    color: '#666',
   },
   closeButton: {
     fontSize: 24,
@@ -367,6 +367,7 @@ const styles = StyleSheet.create({
   callDate: {
     fontSize: 14,
     fontWeight: '600',
+    color: '#666',
   },
   callTime: {
     fontSize: 12,
