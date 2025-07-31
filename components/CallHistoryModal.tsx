@@ -6,6 +6,7 @@ import {
   Alert,
   FlatList,
   Modal,
+  SafeAreaView,
   StyleSheet,
   TouchableOpacity,
   View,
@@ -226,11 +227,11 @@ export const CallHistoryModal: React.FC<CallHistoryModalProps> = ({
     <Modal
       visible={visible}
       animationType="slide"
-      transparent={true}
+      presentationStyle="fullScreen"
       onRequestClose={onClose}
     >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
+      <SafeAreaView style={styles.fullScreenContainer}>
+        <View style={styles.fullScreenContent}>
           <View style={styles.modalHeader}>
             <ThemedText style={styles.modalTitle}>
               📞 Historique des appels
@@ -267,12 +268,20 @@ export const CallHistoryModal: React.FC<CallHistoryModalProps> = ({
             />
           )}
         </View>
-      </View>
+      </SafeAreaView>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
+  fullScreenContainer: {
+    flex: 1,
+    backgroundColor: 'white',
+  },
+  fullScreenContent: {
+    flex: 1,
+    backgroundColor: 'white',
+  },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',

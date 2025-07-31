@@ -17,6 +17,7 @@ import EditSeniorForm from "@/components/EditSeniorForm";
 import FamilySharingScreen from "@/components/FamilySharingScreen";
 import JoinFamilyScreen from "@/components/JoinFamilyScreen";
 import { CallHistoryModal } from "@/components/CallHistoryModal";
+import SeniorDetailScreen from "@/components/SeniorDetailScreen";
 import {
   deleteSenior,
   getSeniorStats,
@@ -74,6 +75,7 @@ export default function SeniorsListScreen() {
   const [showFamilySharing, setShowFamilySharing] = useState(false);
   const [showJoinFamily, setShowJoinFamily] = useState(false);
   const [showCallHistory, setShowCallHistory] = useState(false);
+  const [showSeniorDetail, setShowSeniorDetail] = useState(false);
   const [selectedSenior, setSelectedSenior] = useState<Senior | null>(null);
   const [selectedSeniorForCalls, setSelectedSeniorForCalls] = useState<any | null>(null);
 
@@ -238,7 +240,10 @@ export default function SeniorsListScreen() {
     const options = [
       {
         text: "📊 Voir détails",
-        onPress: () => Alert.alert("Info", "Fonctionnalité en développement"),
+        onPress: () => {
+          setSelectedSenior(senior);
+          setShowSeniorDetail(true);
+        },
       },
       {
         text: "✏️ Éditer",
@@ -460,7 +465,7 @@ export default function SeniorsListScreen() {
       <Modal
         visible={showAddSenior}
         animationType="slide"
-        presentationStyle="pageSheet"
+        presentationStyle="fullScreen"
       >
         <AddSeniorForm
           onSuccess={handleAddSeniorSuccess}
@@ -472,7 +477,7 @@ export default function SeniorsListScreen() {
       <Modal
         visible={showEditSenior}
         animationType="slide"
-        presentationStyle="pageSheet"
+        presentationStyle="fullScreen"
       >
         {selectedSenior && (
           <EditSeniorForm
@@ -487,7 +492,7 @@ export default function SeniorsListScreen() {
       <Modal
         visible={showFamilySharing}
         animationType="slide"
-        presentationStyle="pageSheet"
+        presentationStyle="fullScreen"
       >
         {selectedSenior && (
           <FamilySharingScreen
@@ -505,26 +510,7 @@ export default function SeniorsListScreen() {
       <Modal
         visible={showJoinFamily}
         animationType="slide"
-        presentationStyle="pageSheet"
-      >
-        <JoinFamilyScreen
-          onSuccess={(seniorInfo) => {
-            setShowJoinFamily(false);
-            loadSeniors(true); // Rafraîchir la liste
-            Alert.alert(
-              "✅ Succès",
-              `Vous avez rejoint la famille de ${seniorInfo.first_name} ${seniorInfo.last_name}`
-            );
-          }}
-          onBack={() => setShowJoinFamily(false)}
-        />
-      </Modal>
-
-      {/* Modal - Rejoindre une famille */}
-      <Modal
-        visible={showJoinFamily}
-        animationType="slide"
-        presentationStyle="pageSheet"
+        presentationStyle="fullScreen"
       >
         <JoinFamilyScreen
           onSuccess={(seniorInfo) => {
@@ -550,6 +536,28 @@ export default function SeniorsListScreen() {
           senior={selectedSeniorForCalls}
         />
       )}
+
+      {/* Modal - Détails du senior (plein écran) */}
+      <Modal
+        visible={showSeniorDetail}
+        animationType="slide"
+        presentationStyle="fullScreen"
+      >
+        {selectedSenior && (
+          <SeniorDetailScreen
+            senior={selectedSenior}
+            onBack={() => {
+              setShowSeniorDetail(false);
+              setSelectedSenior(null);
+              loadSeniors(true); // Rafraîchir les données
+            }}
+            onEdit={(seniorId) => {
+              setShowSeniorDetail(false);
+              handleEditSenior(selectedSenior);
+            }}
+          />
+        )}
+      </Modal>
     </SafeAreaView>
   );
 }
